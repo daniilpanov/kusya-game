@@ -29,7 +29,7 @@ class EnvLoader {
     }
     
     private static function stripQuotes($value) {
-        return $value[0] === '"' && $value[strlen($value) - 1] === '"' || $value[0] === "'" && $value[strlen($value) - 1] === "'" ? substr($value, 1, -1); : $value;
+        return $value[0] === '"' && $value[strlen($value) - 1] === '"' || $value[0] === "'" && $value[strlen($value) - 1] === "'" ? substr($value, 1, -1) : $value;
     }
     
     public static function get($key, $default = null) {

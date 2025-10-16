@@ -24,29 +24,17 @@ class Database {
         try {
             $this->pdo = new PDO($dsn, $username, $password, $options);
             
-            // Логируем успешное подключение (только в development)
-            if (EnvLoader::isDebug()) {
-                error_log("Database connected successfully to: $dbname");
-            }
-            
         } catch (PDOException $e) {
             $errorMessage = "Database connection failed: " . $e->getMessage();
             error_log($errorMessage);
-            
-            // В production показываем общее сообщение, в development - детальное
-            if (EnvLoader::isProduction()) {
-                throw new Exception('Database connection failed. Please try again later.');
-            } else {
-                throw new Exception($errorMessage);
-            }
+            throw new Exception($errorMessage);
         }
     }
     
     // Singleton pattern для одного подключения
     public static function getInstance() {
-        if (self::$instance === null) {
+        if (self::$instance === null)
             self::$instance = new self();
-        }
         return self::$instance;
     }
     
