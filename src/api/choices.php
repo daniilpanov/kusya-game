@@ -23,7 +23,7 @@ try {
 
 } catch (Exception $e) {
     $code = $e->getCode() ?: 400;
-    http_response_code($code);
+    http_response_code((int) $code);
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
