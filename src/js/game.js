@@ -17,8 +17,6 @@ class NovelGameEngine {
             achievements: new Set(),
             variables: new Map()
         };
-
-        this.init();
     }
 
     async init() {
@@ -742,7 +740,7 @@ class NovelGameEngine {
 }
 
 // Запуск игрового движка когда DOM загружен
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Добавляем дополнительные стили для игры
     const gameStyles = `
         <style>
@@ -808,4 +806,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Запускаем игровой движок
     window.gameEngine = new NovelGameEngine();
+    await window.gameEngine.init();
 });
