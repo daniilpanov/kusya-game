@@ -6,16 +6,10 @@ class NovelGameEngine {
         this.currentDialogues = [];
         this.currentDialogueIndex = 0;
         this.characters = new Map();
-        this.loadedImages = new Set();
 
-        // Состояние игры
         this.gameState = {
-            isAutoMode: false,
-            isSkipping: false,
             isTyping: false,
-            currentText: '',
-            achievements: new Set(),
-            variables: new Map()
+            currentText: ''
         };
     }
 
@@ -44,10 +38,6 @@ class NovelGameEngine {
     }
 
     async setupDOM() {
-        // Создаем необходимые DOM элементы если их нет
-        this.createRequiredElements();
-
-        // Устанавливаем обработчики для основных элементов
         this.dialogueContainer = document.getElementById('dialogueContainer');
         this.dialogueText = document.getElementById('dialogueText');
         this.characterName = document.getElementById('characterName');
@@ -59,30 +49,8 @@ class NovelGameEngine {
         if (!this.dialogueContainer || !this.dialogueText) {
             throw new Error('Required DOM elements not found');
         }
-    }
 
-    createRequiredElements() {
-        // Создаем контейнер для выбора если его нет
-        if (!document.getElementById('choicesContainer')) {
-            const choicesContainer = document.createElement('div');
-            choicesContainer.id = 'choicesContainer';
-            choicesContainer.className = 'choices-container';
-            document.querySelector('.game-container').appendChild(choicesContainer);
-        }
-
-        // Создаем индикатор загрузки если его нет
-        if (!document.getElementById('loadingOverlay')) {
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.id = 'loadingOverlay';
-            loadingOverlay.className = 'loading-overlay';
-            loadingOverlay.innerHTML = `
-                <div class="loading-content">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Загрузка...</div>
-                </div>
-            `;
-            document.querySelector('.game-container').appendChild(loadingOverlay);
-        }
+        await this.hideLoading();
     }
 
     async loadInitialScene() {
@@ -99,8 +67,6 @@ class NovelGameEngine {
         } catch (error) {
             console.error('Error loading initial scene:', error);
             this.showError('Не удалось загрузить начальную сцену');
-        } finally {
-            await this.hideLoading();
         }
     }
 
@@ -116,31 +82,21 @@ class NovelGameEngine {
                 return true;
             }
         } catch (error) {
-            console.error(`Error loading scene ${sceneId}:`, error);
             throw error;
         }
     }
 
     async setupScene(scene) {
-        // Очищаем предыдущую сцену
         this.clearScene();
 
-        // Устанавливаем фон
         if (scene.background) {
             await this.setBackground(scene.background);
         }
 
-        // Устанавливаем музыку
-        if (scene.music) {
-            await this.setMusic(scene.music);
-        }
-
-        // Создаем персонажей
         if (scene.initial_characters && Array.isArray(scene.initial_characters)) {
             await this.createCharacters(scene.initial_characters);
         }
 
-        // Обновляем URL без перезагрузки страницы
         this.updateUrlParams();
     }
 
@@ -153,29 +109,18 @@ class NovelGameEngine {
             await Utils.loadImage(imageUrl);
             this.sceneBackground.style.backgroundImage = `url('${imageUrl}')`;
         } catch (error) {
-            console.warn(`Could not load background: ${backgroundImage}`, error);
-            // Используем цвет как fallback
             this.sceneBackground.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         }
-    }
-
-    async setMusic(musicFile) {
-        // В будущем можно добавить аудио плеер
-        console.log('Background music:', musicFile);
     }
 
     async createCharacters(charactersData) {
         if (!charactersData || !Array.isArray(charactersData)) return;
 
-        const loadPromises = [];
-
         for (const charData of charactersData) {
             if (charData.visible !== false) {
-                loadPromises.push(this.createCharacter(charData));
+                await this.createCharacter(charData);
             }
         }
-
-        await Promise.allSettled(loadPromises);
     }
 
     async createCharacter(charData) {
@@ -184,12 +129,10 @@ class NovelGameEngine {
         character.id = `character-${charData.id}`;
         character.dataset.characterId = charData.id;
 
-        // Устанавливаем позицию
         const position = Utils.getPosition(charData);
         character.style.left = position.x;
         character.style.top = position.y;
 
-        // Загружаем и устанавливаем спрайт
         if (charData.sprite) {
             try {
                 const img = await Utils.loadImage(`assets/sprites/${charData.sprite}`);
@@ -198,8 +141,6 @@ class NovelGameEngine {
                 img.style.objectFit = 'contain';
                 character.appendChild(img);
             } catch (error) {
-                console.warn(`Could not load sprite: ${charData.sprite}`, error);
-                // Создаем заглушку
                 const placeholder = document.createElement('div');
                 placeholder.className = 'character-placeholder';
                 placeholder.innerHTML = '👤';
@@ -223,12 +164,9 @@ class NovelGameEngine {
         return character;
     }
 
-    async loadDialogues(dialogueId = null) {
+    async loadDialogues() {
         try {
             let url = `/api/scenes/${this.currentSceneId}/dialogues`;
-            if (dialogueId) {
-                url += `?start_from=${dialogueId}`;
-            }
 
             const data = await Utils.fetchJSON(url);
 
@@ -242,10 +180,11 @@ class NovelGameEngine {
 
                 if (data.next_action) {
                     await this.handleNextAction(data.next_action);
+                } else {
+                    this.hideDialogueContainer();
                 }
             }
         } catch (error) {
-            console.error('Error loading dialogues:', error);
             throw error;
         }
     }
@@ -261,12 +200,10 @@ class NovelGameEngine {
     }
 
     async displayDialogue(dialogue) {
-        // Применяем изменения персонажей
         if (dialogue.character_changes && dialogue.character_changes.length > 0) {
             await this.applyCharacterChanges(dialogue.character_changes);
         }
 
-        // Устанавливаем имя персонажа
         if (dialogue.character_id) {
             this.characterName.textContent = this.getCharacterDisplayName(dialogue.character_id);
             this.characterName.style.display = 'block';
@@ -274,45 +211,43 @@ class NovelGameEngine {
             this.characterName.style.display = 'none';
         }
 
-        // Показываем текст
         await this.showDialogueText(dialogue.text);
-
-        // Ждем пользовательского ввода для продолжения
-        if (!this.gameState.isAutoMode) {
-            await this.waitForUserContinue();
-        } else {
-            // Автоматическое продолжение через 2 секунды
-            await Utils.delay(2000);
-        }
+        await this.waitForUserContinue();
     }
 
     async showDialogueText(text) {
         this.dialogueText.textContent = '';
-
-        if (this.gameState.isSkipping) {
-            this.dialogueText.textContent = text;
-            return;
-        }
-
         this.gameState.isTyping = true;
-        await Utils.typeText(this.dialogueText, text, this.getTypeSpeed());
+
+        await Utils.typeText(this.dialogueText, text, 30);
+
         this.gameState.isTyping = false;
     }
 
     async applyCharacterChanges(changes) {
         if (!changes || !Array.isArray(changes)) return;
 
-        const promises = changes.map(change => this.applyCharacterChange(change));
-        await Promise.allSettled(promises);
+        for (const change of changes) {
+            await this.applyCharacterChange(change);
+        }
     }
 
     async applyCharacterChange(change) {
         if (!change.character_id) return;
 
-        const character = this.characters.get(change.character_id);
+        let character = this.characters.get(change.character_id);
+
+        if (!character && change.visible !== false) {
+            character = await this.createCharacter({
+                id: change.character_id,
+                sprite: change.sprite,
+                position: change.position || { desktop: { x: '50%', y: '50%' }, mobile: { x: '50%', y: '50%' } },
+                visible: true
+            });
+        }
+
         if (!character) return;
 
-        // Видимость
         if (change.visible !== undefined) {
             if (change.visible) {
                 character.classList.remove('hidden');
@@ -321,7 +256,12 @@ class NovelGameEngine {
             }
         }
 
-        // Спрайт
+        if (change.position) {
+            const position = Utils.getPosition(change);
+            character.style.left = position.x;
+            character.style.top = position.y;
+        }
+
         if (change.sprite) {
             try {
                 const img = await Utils.loadImage(`assets/sprites/${change.sprite}`);
@@ -329,27 +269,14 @@ class NovelGameEngine {
                 img.style.height = '100%';
                 img.style.objectFit = 'contain';
 
-                // Заменяем текущее изображение
                 const currentImg = character.querySelector('img, .character-placeholder');
                 if (currentImg) {
                     character.removeChild(currentImg);
                 }
                 character.appendChild(img);
             } catch (error) {
-                console.warn(`Could not load character sprite: ${change.sprite}`, error);
+                console.warn(`Could not load character sprite: ${change.sprite}`);
             }
-        }
-
-        // Позиция
-        if (change.position) {
-            const position = Utils.getPosition(change);
-            character.style.left = position.x;
-            character.style.top = position.y;
-        }
-
-        // Анимации (можно добавить позже)
-        if (change.animation) {
-            character.style.animation = `${change.animation} 0.5s ease`;
         }
     }
 
@@ -364,48 +291,34 @@ class NovelGameEngine {
             case 'scene_transition':
                 await this.transitionToScene(nextAction.next_scene_id);
                 break;
-
-            default:
-                console.warn('Unknown next action type:', nextAction.type);
         }
     }
 
     async showChoices(choiceDialogueId) {
-        // Скрываем диалоговое окно
         this.hideDialogueContainer();
 
-        // Загружаем варианты выбора
         try {
             const choicesData = await this.loadChoices(choiceDialogueId);
             await this.displayChoices(choicesData);
         } catch (error) {
-            console.error('Error loading choices:', error);
-            this.showError('Не удалось загрузить варианты выбора');
+            this.showError('Failed to load choices');
         }
     }
 
     async loadChoices(choiceDialogueId) {
-        // В реальной реализации здесь будет запрос к API для получения вариантов выбора
-        // Пока используем заглушку
-        return [
-            { id: 1, text: 'Поздороваться вежливо' },
-            { id: 2, text: 'Спросить "Кто ты?"' },
-            { id: 3, text: 'Промолчать и уйти' }
-        ];
+        const response = await Utils.fetchJSON(`/api/choices?dialogue_id=${choiceDialogueId}`);
+        return response.choices;
     }
 
     async displayChoices(choices) {
-        if (!choices || choices.length === 0) {
-            console.warn('No choices to display');
-            return;
-        }
+        if (!choices || choices.length === 0) return;
 
         this.choicesContainer.innerHTML = '';
 
         choices.forEach(choice => {
             const choiceButton = document.createElement('button');
             choiceButton.className = 'choice-btn';
-            choiceButton.textContent = choice.text;
+            choiceButton.textContent = choice.choice_text;
             choiceButton.dataset.choiceId = choice.id;
 
             choiceButton.addEventListener('click', () => {
@@ -415,15 +328,21 @@ class NovelGameEngine {
             this.choicesContainer.appendChild(choiceButton);
         });
 
-        // Показываем контейнер с анимацией
         this.choicesContainer.style.display = 'flex';
-        await Utils.fadeIn(this.choicesContainer);
+        this.choicesContainer.style.opacity = '0';
+
+        setTimeout(() => {
+            this.choicesContainer.style.opacity = '1';
+            this.choicesContainer.style.transition = 'opacity 0.3s ease';
+        }, 100);
     }
 
     async handleChoice(choice) {
-        // Скрываем варианты выбора
-        this.choicesContainer.style.display = 'none';
-        this.choicesContainer.innerHTML = '';
+        this.choicesContainer.style.opacity = '0';
+        setTimeout(() => {
+            this.choicesContainer.style.display = 'none';
+            this.choicesContainer.innerHTML = '';
+        }, 300);
 
         try {
             const response = await Utils.fetchJSON('/api/choices', {
@@ -438,18 +357,14 @@ class NovelGameEngine {
                 await this.processChoiceResult(response);
             }
         } catch (error) {
-            console.error('Error processing choice:', error);
-            this.showError('Не удалось обработать выбор');
+            this.showError('Failed to process choice');
         }
     }
 
     async processChoiceResult(response) {
         const nextAction = response.next_action;
 
-        if (!nextAction) {
-            console.warn('No next action in choice response');
-            return;
-        }
+        if (!nextAction) return;
 
         switch (nextAction.type) {
             case 'scene_transition':
@@ -459,27 +374,22 @@ class NovelGameEngine {
             case 'continue_dialogue':
                 await this.loadDialogues(nextAction.dialogue_id);
                 break;
-
-            default:
-                console.warn('Unknown choice result type:', nextAction.type);
         }
     }
 
     async transitionToScene(sceneId) {
-        await this.showLoading('Переход к новой сцене...');
+        await this.showLoading('Loading new scene...');
 
         try {
             await this.loadScene(sceneId);
             await this.loadDialogues();
         } catch (error) {
-            console.error('Error transitioning to scene:', error);
-            this.showError('Не удалось перейти к новой сцене');
+            this.showError('Failed to transition to new scene');
         } finally {
             await this.hideLoading();
         }
     }
 
-    // Вспомогательные методы
     showDialogueContainer() {
         this.dialogueContainer.classList.add('active');
     }
@@ -491,6 +401,16 @@ class NovelGameEngine {
     async waitForUserContinue() {
         return new Promise(resolve => {
             const continueHandler = () => {
+                if (this.gameState.isTyping) {
+                    this.gameState.isTyping = false;
+                    const currentDialogue = this.currentDialogues[this.currentDialogueIndex - 1];
+                    if (currentDialogue) {
+                        this.dialogueText.textContent = currentDialogue.text;
+                    }
+                    setTimeout(continueHandler, 100);
+                    return;
+                }
+
                 this.dialogueContainer.removeEventListener('click', continueHandler);
                 document.removeEventListener('keydown', keyHandler);
                 resolve();
@@ -509,32 +429,24 @@ class NovelGameEngine {
     }
 
     getCharacterDisplayName(characterId) {
-        // В будущем можно добавить словарь имен персонажей
         const nameMap = {
-            'hero': 'Герой',
-            'npc': 'Незнакомец',
+            'hero': 'Hero',
+            'npc': 'Stranger',
+            'main_character': 'Main Character',
             'narrator': ''
         };
 
         return nameMap[characterId] || characterId;
     }
 
-    getTypeSpeed() {
-        if (this.gameState.isSkipping) return 0;
-        return this.gameState.isAutoMode ? 10 : 20;
-    }
-
     clearScene() {
-        // Очищаем персонажей
         this.charactersContainer.innerHTML = '';
         this.characters.clear();
 
-        // Очищаем диалоги
         this.dialogueText.textContent = '';
         this.characterName.textContent = '';
         this.hideDialogueContainer();
 
-        // Очищаем выборы
         this.choicesContainer.innerHTML = '';
         this.choicesContainer.style.display = 'none';
     }
@@ -568,102 +480,28 @@ class NovelGameEngine {
     }
 
     showError(message, duration = 5000) {
-        // Используем ту же систему ошибок что и в app.js
         if (window.novelApp && typeof window.novelApp.showError === 'function') {
             return window.novelApp.showError(message, duration);
         }
-
-        // Fallback
         alert(message);
     }
 
-    // Управление игрой
-    toggleAutoMode() {
-        this.gameState.isAutoMode = !this.gameState.isAutoMode;
-
-        const autoBtn = document.getElementById('autoBtn');
-        if (autoBtn) {
-            autoBtn.classList.toggle('active', this.gameState.isAutoMode);
-            autoBtn.textContent = this.gameState.isAutoMode ? 'Авто ⏸' : 'Авто ⏵';
-        }
-
-        return this.gameState.isAutoMode;
-    }
-
-    toggleSkipMode() {
-        this.gameState.isSkipping = !this.gameState.isSkipping;
-
-        const skipBtn = document.getElementById('skipBtn');
-        if (skipBtn) {
-            skipBtn.classList.toggle('active', this.gameState.isSkipping);
-            skipBtn.textContent = this.gameState.isSkipping ? 'Пропуск ⏸' : 'Пропуск ⏩';
-        }
-
-        // Если включен пропуск, ускоряем текущую печать
-        if (this.gameState.isSkipping && this.gameState.isTyping) {
-            this.gameState.isTyping = false;
-            const currentDialogue = this.currentDialogues[this.currentDialogueIndex - 1];
-            if (currentDialogue) {
-                this.dialogueText.textContent = currentDialogue.text;
-            }
-        }
-
-        return this.gameState.isSkipping;
-    }
-
-    showPauseMenu() {
-        const pauseMenu = document.getElementById('pauseMenu');
-        if (pauseMenu) {
-            pauseMenu.style.display = 'block';
-            Utils.fadeIn(pauseMenu);
-        }
-    }
-
-    hidePauseMenu() {
-        const pauseMenu = document.getElementById('pauseMenu');
-        if (pauseMenu) {
-            Utils.fadeOut(pauseMenu).then(() => {
-                pauseMenu.style.display = 'none';
-            });
-        }
-    }
-
-    restartGame() {
-        if (confirm('Начать игру заново?')) {
-            this.hidePauseMenu();
-            this.loadInitialScene();
-        }
-    }
-
-    quitToMenu() {
-        if (confirm('Выйти в главное меню? Весь прогресс будет потерян.')) {
-            window.location.href = 'index.html';
-        }
-    }
-
     async setupEventListeners() {
-        // Кнопки управления
-        const menuBtn = document.getElementById('menuBtn');
         const autoBtn = document.getElementById('autoBtn');
         const skipBtn = document.getElementById('skipBtn');
 
-        if (menuBtn) {
-            menuBtn.addEventListener('click', () => this.showPauseMenu());
-        }
+        if (autoBtn) autoBtn.style.display = 'none';
+        if (skipBtn) skipBtn.style.display = 'none';
 
-        if (autoBtn) {
-            autoBtn.addEventListener('click', () => this.toggleAutoMode());
-        }
-
-        if (skipBtn) {
-            skipBtn.addEventListener('click', () => this.toggleSkipMode());
-        }
-
-        // Меню паузы
+        const menuBtn = document.getElementById('menuBtn');
         const resumeBtn = document.getElementById('resumeBtn');
         const restartBtn = document.getElementById('restartBtn');
         const quitBtn = document.getElementById('quitBtn');
         const pauseMenu = document.getElementById('pauseMenu');
+
+        if (menuBtn) {
+            menuBtn.addEventListener('click', () => this.showPauseMenu());
+        }
 
         if (resumeBtn) {
             resumeBtn.addEventListener('click', () => this.hidePauseMenu());
@@ -685,63 +523,43 @@ class NovelGameEngine {
             });
         }
 
-        // Глобальные горячие клавиши
         document.addEventListener('keydown', (e) => {
-            switch (e.code) {
-                case 'Escape':
-                    e.preventDefault();
-                    this.showPauseMenu();
-                    break;
-
-                case 'KeyA':
-                    if (e.ctrlKey) {
-                        e.preventDefault();
-                        this.toggleAutoMode();
-                    }
-                    break;
-
-                case 'KeyS':
-                    if (e.ctrlKey) {
-                        e.preventDefault();
-                        this.toggleSkipMode();
-                    }
-                    break;
-
-                case 'Space':
-                    if (this.dialogueContainer.classList.contains('active') &&
-                        !this.gameState.isTyping &&
-                        !this.gameState.isAutoMode) {
-                        e.preventDefault();
-                        // Продолжить диалог
-                        if (this.currentDialogueIndex < this.currentDialogues.length) {
-                            this.currentDialogueIndex++;
-                            if (this.currentDialogueIndex < this.currentDialogues.length) {
-                                this.displayDialogue(this.currentDialogues[this.currentDialogueIndex]);
-                            }
-                        }
-                    }
-                    break;
+            if (e.code === 'Escape') {
+                e.preventDefault();
+                this.showPauseMenu();
             }
-        });
-
-        // Обработка изменения размера окна
-        window.addEventListener('resize', () => {
-            this.handleResize();
         });
     }
 
-    handleResize() {
-        // Перепозиционируем персонажей при изменении размера окна
-        this.characters.forEach((character, characterId) => {
-            // В реальной реализации нужно пересчитать позиции
-            // based on character data and new window size
-        });
+    showPauseMenu() {
+        const pauseMenu = document.getElementById('pauseMenu');
+        if (pauseMenu) {
+            pauseMenu.style.display = 'block';
+        }
+    }
+
+    hidePauseMenu() {
+        const pauseMenu = document.getElementById('pauseMenu');
+        if (pauseMenu) {
+            pauseMenu.style.display = 'none';
+        }
+    }
+
+    restartGame() {
+        if (confirm('Restart game?')) {
+            this.hidePauseMenu();
+            this.loadInitialScene();
+        }
+    }
+
+    quitToMenu() {
+        if (confirm('Quit to main menu? All progress will be lost.')) {
+            window.location.href = 'index.html';
+        }
     }
 }
 
-// Запуск игрового движка когда DOM загружен
 document.addEventListener('DOMContentLoaded', async () => {
-    // Добавляем дополнительные стили для игры
     const gameStyles = `
         <style>
             .character {
@@ -749,16 +567,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 transition: all 0.5s ease;
                 max-width: 80%;
                 max-height: 80%;
+                z-index: 10;
             }
             
             .character.hidden {
                 opacity: 0;
                 pointer-events: none;
-            }
-            
-            .btn.active {
-                background: #ffd700;
-                color: #333;
             }
             
             .choices-container {
@@ -795,16 +609,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 box-shadow: 0 8px 25px rgba(0,0,0,0.3);
             }
             
-            .control-panel .btn {
-                backdrop-filter: blur(10px);
-                background: rgba(255, 255, 255, 0.9);
+            #autoBtn, #skipBtn {
+                display: none !important;
             }
         </style>
     `;
 
     document.head.insertAdjacentHTML('beforeend', gameStyles);
 
-    // Запускаем игровой движок
     window.gameEngine = new NovelGameEngine();
     await window.gameEngine.init();
 });
