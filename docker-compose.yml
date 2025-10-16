@@ -1,13 +1,13 @@
 services:
   apache:
-    build: ./php
+    build: "./php"
     ports:
       - "8080:80"
     env_file:
       - .env
     volumes:
-      - ./src:/var/www/html  # Теперь здесь весь фронтенд + бэкенд
-      - ./apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - "./src:/var/www/html:ro"
+      - "./apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro"
     depends_on:
       - mysql
     networks:
@@ -21,17 +21,17 @@ services:
       MARIADB_PASSWORD: "${DB_PASSWORD}"
       MARIADB_DATABASE: "${DB_NAME}"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - "mysql_data:/var/lib/mysql:rw"
+      - "./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro"
     networks:
       - novel-network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     environment:
-      PMA_HOST: mysql
+      PMA_HOST: "mysql"
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
     ports:
       - "8081:80"
     depends_on:
