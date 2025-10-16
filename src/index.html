@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Platform - Главная</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <h1>Novel Platform</h1>
+        <p>Платформа для интерактивных визуальных новелл</p>
+    </header>
+
+    <main class="main">
+        <div class="games-grid" id="gamesGrid">
+            <!-- Игры будут загружены через JavaScript -->
+            <div class="loading">Загрузка игр...</div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Novel Platform</p>
+    </footer>
+</div>
+
+<!-- Модальное окно игры -->
+<div id="gameModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modalContent">
+            <!-- Контент модального окна -->
+        </div>
+    </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

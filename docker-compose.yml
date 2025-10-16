@@ -1,0 +1,45 @@
+services:
+  apache:
+    build: ./php
+    ports:
+      - "8080:80"
+    env_file:
+      - .env
+    volumes:
+      - ./src:/var/www/html  # Теперь здесь весь фронтенд + бэкенд
+      - ./apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+    depends_on:
+      - mysql
+    networks:
+      - novel-network
+
+  mysql:
+    image: mysql:8.0
+    env_file:
+      - .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - novel-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - novel-network
+
+volumes:
+  mysql_data:
+
+networks:
+  novel-network:

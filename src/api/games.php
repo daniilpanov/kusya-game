@@ -1,0 +1,169 @@
+<?php
+require_once 'db.php';
+
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+try {
+    $db = new Database();
+    $pdo = $db->getConnection();
+
+    $requestUri = $_SERVER['REQUEST_URI'];
+    $uriParts = explode('/', $requestUri);
+    $gameId = null;
+
+    // Определяем ID игры из URL
+    foreach ($uriParts as $index => $part) {
+        if ($part === 'games' && isset($uriParts[$index + 1]) && is_numeric($uriParts[$index + 1])) {
+            $gameId = $uriParts[$index + 1];
+            break;
+        }
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        if ($gameId) {
+            // GET /api/games/{id} - информация об игре
+            if (end($uriParts) === 'play') {
+                // GET /api/games/{id}/play - начать игру
+                getStartScene($pdo, $gameId);
+            } else {
+                // GET /api/games/{id} - информация об игре
+                getGameInfo($pdo, $gameId);
+            }
+        } else {
+            // GET /api/games - список игр
+            getGamesList($pdo);
+        }
+    } else {
+        throw new Exception('Method not allowed', 405);
+    }
+
+} catch (Exception $e) {
+    $code = $e->getCode() ?: 400;
+    http_response_code($code);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+}
+
+function getGamesList($pdo) {
+    $query = "
+        SELECT g.id, g.title, g.start_scene_id,
+               COUNT(DISTINCT s.id) as scene_count,
+               COUNT(DISTINCT d.id) as dialogue_count
+        FROM games g
+        LEFT JOIN scenes s ON g.id = s.game_id
+        LEFT JOIN dialogues d ON s.id = d.scene_id
+        GROUP BY g.id
+        ORDER BY g.created_at DESC
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+    $games = $stmt->fetchAll();
+
+    echo json_encode([
+        'success' => true,
+        'games' => $games
+    ]);
+}
+
+function getGameInfo($pdo, $gameId) {
+    $query = "
+        SELECT g.*,
+               COUNT(DISTINCT s.id) as scene_count,
+               COUNT(DISTINCT d.id) as dialogue_count
+        FROM games g
+        LEFT JOIN scenes s ON g.id = s.game_id
+        LEFT JOIN dialogues d ON s.id = d.scene_id
+        WHERE g.id = :game_id
+        GROUP BY g.id
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+    $stmt->execute();
+    $game = $stmt->fetch();
+
+    if (!$game) {
+        throw new Exception('Game not found', 404);
+    }
+
+    echo json_encode([
+        'success' => true,
+        'game' => $game
+    ]);
+}
+
+function getStartScene($pdo, $gameId) {
+    $query = "
+        SELECT g.start_scene_id
+        FROM games g
+        WHERE g.id = :game_id
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+    $stmt->execute();
+    $game = $stmt->fetch();
+
+    if (!$game) {
+        throw new Exception('Game not found', 404);
+    }
+
+    // Получаем стартовую сцену
+    $query = "
+        SELECT s.scene_external_id, s.background, s.music, s.initial_characters
+        FROM scenes s
+        WHERE s.scene_external_id = :scene_id AND s.game_id = :game_id
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->bindValue(':scene_id', $game['start_scene_id']);
+    $stmt->bindValue(':game_id', $gameId, PDO::PARAM_INT);
+    $stmt->execute();
+    $scene = $stmt->fetch();
+
+    if (!$scene) {
+        throw new Exception('Start scene not found', 404);
+    }
+
+    // Получаем первые диалоги сцены
+    $query = "
+        SELECT d.*
+        FROM dialogues d
+        JOIN scenes s ON d.scene_id = s.id
+        WHERE s.scene_external_id = :scene_id
+        AND d.dialogue_order = 1
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->bindValue(':scene_id', $game['start_scene_id']);
+    $stmt->execute();
+    $firstDialogue = $stmt->fetch();
+
+    $response = [
+        'success' => true,
+        'scene' => [
+            'scene_id' => $scene['scene_external_id'],
+            'background' => $scene['background'],
+            'music' => $scene['music'],
+            'initial_characters' => json_decode($scene['initial_characters'], true)
+        ]
+    ];
+
+    // Если есть первый диалог, добавляем его ID для начала
+    if ($firstDialogue) {
+        $response['first_dialogue_id'] = $firstDialogue['id'];
+    }
+
+    echo json_encode($response);
+}

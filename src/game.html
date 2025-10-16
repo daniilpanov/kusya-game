@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Platform - Игра</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="game-container">
+    <!-- Фон сцены -->
+    <div class="scene-background" id="sceneBackground"></div>
+
+    <!-- Контейнер для персонажей -->
+    <div class="characters-container" id="charactersContainer"></div>
+
+    <!-- Диалоговое окно -->
+    <div class="dialogue-container" id="dialogueContainer">
+        <div class="dialogue-box">
+            <div class="character-name" id="characterName"></div>
+            <div class="dialogue-text" id="dialogueText"></div>
+            <div class="next-indicator">▼</div>
+        </div>
+    </div>
+
+    <!-- Контейнер для выбора -->
+    <div class="choices-container" id="choicesContainer"></div>
+
+    <!-- Панель управления -->
+    <div class="control-panel">
+        <button id="menuBtn" class="btn btn-secondary">Меню</button>
+        <button id="autoBtn" class="btn btn-secondary">Авто</button>
+        <button id="skipBtn" class="btn btn-secondary">Пропуск</button>
+    </div>
+
+    <!-- Индикатор загрузки -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка...</div>
+    </div>
+</div>
+
+<!-- Меню паузы -->
+<div id="pauseMenu" class="modal">
+    <div class="modal-content">
+        <h2>Меню</h2>
+        <button id="resumeBtn" class="btn btn-primary">Продолжить</button>
+        <button id="restartBtn" class="btn btn-secondary">Начать заново</button>
+        <button id="quitBtn" class="btn btn-secondary">Выйти в меню</button>
+    </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
