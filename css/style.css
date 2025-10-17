@@ -317,6 +317,11 @@ body {
     z-index: 1000;
 }
 
+.loading-content {
+    display: grid;
+    justify-items: center;
+}
+
 .loading-spinner {
     width: 50px;
     height: 50px;
@@ -334,14 +339,6 @@ body {
 
 .loading-text {
     font-size: 1.2rem;
-}
-
-/* Футер */
-.footer {
-    text-align: center;
-    color: white;
-    margin-top: 40px;
-    opacity: 0.8;
 }
 
 /* Адаптивность */

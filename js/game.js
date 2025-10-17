@@ -32,9 +32,8 @@ class NovelGameEngine {
         this.currentSceneId = params.get('scene_id');
         this.firstDialogueId = params.get('first_dialogue_id');
 
-        if (!this.gameId || !this.currentSceneId) {
+        if (!this.gameId || !this.currentSceneId)
             throw new Error('Missing required game parameters');
-        }
     }
 
     async setupDOM() {
@@ -46,9 +45,8 @@ class NovelGameEngine {
         this.choicesContainer = document.getElementById('choicesContainer');
         this.loadingOverlay = document.getElementById('loadingOverlay');
 
-        if (!this.dialogueContainer || !this.dialogueText) {
+        if (!this.dialogueContainer || !this.dialogueText)
             throw new Error('Required DOM elements not found');
-        }
 
         await this.hideLoading();
     }
@@ -59,11 +57,10 @@ class NovelGameEngine {
         try {
             await this.loadScene(this.currentSceneId);
 
-            if (this.firstDialogueId) {
+            if (this.firstDialogueId)
                 await this.loadDialogues(this.firstDialogueId);
-            } else {
+            else
                 await this.loadDialogues();
-            }
         } catch (error) {
             console.error('Error loading initial scene:', error);
             this.showError('Не удалось загрузить начальную сцену');
@@ -79,7 +76,6 @@ class NovelGameEngine {
                 this.currentSceneId = data.scene.scene_id;
 
                 await this.setupScene(this.currentScene);
-                return true;
             }
         } catch (error) {
             throw error;
@@ -89,13 +85,11 @@ class NovelGameEngine {
     async setupScene(scene) {
         this.clearScene();
 
-        if (scene.background) {
+        if (scene.background)
             await this.setBackground(scene.background);
-        }
 
-        if (scene.initial_characters && Array.isArray(scene.initial_characters)) {
+        if (scene.initial_characters && Array.isArray(scene.initial_characters))
             await this.createCharacters(scene.initial_characters);
-        }
 
         this.updateUrlParams();
     }
@@ -117,9 +111,8 @@ class NovelGameEngine {
         if (!charactersData || !Array.isArray(charactersData)) return;
 
         for (const charData of charactersData) {
-            if (charData.visible !== false) {
+            if (charData.visible !== false)
                 await this.createCharacter(charData);
-            }
         }
     }
 
@@ -174,15 +167,13 @@ class NovelGameEngine {
                 this.currentDialogues = data.dialogues || [];
                 this.currentDialogueIndex = 0;
 
-                if (this.currentDialogues.length > 0) {
+                if (this.currentDialogues.length > 0)
                     await this.startDialogueChain();
-                }
 
-                if (data.next_action) {
+                if (data.next_action)
                     await this.handleNextAction(data.next_action);
-                } else {
+                else
                     this.hideDialogueContainer();
-                }
             }
         } catch (error) {
             throw error;
@@ -200,16 +191,14 @@ class NovelGameEngine {
     }
 
     async displayDialogue(dialogue) {
-        if (dialogue.character_changes && dialogue.character_changes.length > 0) {
+        if (dialogue.character_changes && dialogue.character_changes.length > 0)
             await this.applyCharacterChanges(dialogue.character_changes);
-        }
 
         if (dialogue.character_id) {
             this.characterName.textContent = this.getCharacterDisplayName(dialogue.character_id);
             this.characterName.style.display = 'block';
-        } else {
+        } else
             this.characterName.style.display = 'none';
-        }
 
         await this.showDialogueText(dialogue.text);
         await this.waitForUserContinue();
@@ -227,9 +216,8 @@ class NovelGameEngine {
     async applyCharacterChanges(changes) {
         if (!changes || !Array.isArray(changes)) return;
 
-        for (const change of changes) {
+        for (const change of changes)
             await this.applyCharacterChange(change);
-        }
     }
 
     async applyCharacterChange(change) {
@@ -249,11 +237,10 @@ class NovelGameEngine {
         if (!character) return;
 
         if (change.visible !== undefined) {
-            if (change.visible) {
+            if (change.visible)
                 character.classList.remove('hidden');
-            } else {
+            else
                 character.classList.add('hidden');
-            }
         }
 
         if (change.position) {
@@ -270,9 +257,8 @@ class NovelGameEngine {
                 img.style.objectFit = 'contain';
 
                 const currentImg = character.querySelector('img, .character-placeholder');
-                if (currentImg) {
+                if (currentImg)
                     character.removeChild(currentImg);
-                }
                 character.appendChild(img);
             } catch (error) {
                 console.warn(`Could not load character sprite: ${change.sprite}`);
@@ -321,9 +307,8 @@ class NovelGameEngine {
             choiceButton.textContent = choice.choice_text;
             choiceButton.dataset.choiceId = choice.id;
 
-            choiceButton.addEventListener('click', () => {
-                this.handleChoice(choice);
-            });
+            choiceButton.addEventListener('click', () =>
+                this.handleChoice(choice));
 
             this.choicesContainer.appendChild(choiceButton);
         });
@@ -353,9 +338,8 @@ class NovelGameEngine {
                 }
             });
 
-            if (response.success) {
+            if (response.success)
                 await this.processChoiceResult(response);
-            }
         } catch (error) {
             this.showError('Failed to process choice');
         }
@@ -404,9 +388,8 @@ class NovelGameEngine {
                 if (this.gameState.isTyping) {
                     this.gameState.isTyping = false;
                     const currentDialogue = this.currentDialogues[this.currentDialogueIndex - 1];
-                    if (currentDialogue) {
+                    if (currentDialogue)
                         this.dialogueText.textContent = currentDialogue.text;
-                    }
                     setTimeout(continueHandler, 100);
                     return;
                 }
@@ -464,10 +447,8 @@ class NovelGameEngine {
     async showLoading(message = 'Загрузка...') {
         if (this.loadingOverlay) {
             const textElement = this.loadingOverlay.querySelector('.loading-text');
-            if (textElement) {
+            if (textElement)
                 textElement.textContent = message;
-            }
-            this.loadingOverlay.style.display = 'flex';
             await Utils.fadeIn(this.loadingOverlay);
         }
     }
@@ -480,9 +461,8 @@ class NovelGameEngine {
     }
 
     showError(message, duration = 5000) {
-        if (window.novelApp && typeof window.novelApp.showError === 'function') {
+        if (window.novelApp && typeof window.novelApp.showError === 'function')
             return window.novelApp.showError(message, duration);
-        }
         alert(message);
     }
 
@@ -499,27 +479,22 @@ class NovelGameEngine {
         const quitBtn = document.getElementById('quitBtn');
         const pauseMenu = document.getElementById('pauseMenu');
 
-        if (menuBtn) {
+        if (menuBtn)
             menuBtn.addEventListener('click', () => this.showPauseMenu());
-        }
 
-        if (resumeBtn) {
+        if (resumeBtn)
             resumeBtn.addEventListener('click', () => this.hidePauseMenu());
-        }
 
-        if (restartBtn) {
+        if (restartBtn)
             restartBtn.addEventListener('click', () => this.restartGame());
-        }
 
-        if (quitBtn) {
+        if (quitBtn)
             quitBtn.addEventListener('click', () => this.quitToMenu());
-        }
 
         if (pauseMenu) {
             pauseMenu.addEventListener('click', (e) => {
-                if (e.target === pauseMenu) {
+                if (e.target === pauseMenu)
                     this.hidePauseMenu();
-                }
             });
         }
 
@@ -533,90 +508,30 @@ class NovelGameEngine {
 
     showPauseMenu() {
         const pauseMenu = document.getElementById('pauseMenu');
-        if (pauseMenu) {
+        if (pauseMenu)
             pauseMenu.style.display = 'block';
-        }
     }
 
     hidePauseMenu() {
         const pauseMenu = document.getElementById('pauseMenu');
-        if (pauseMenu) {
+        if (pauseMenu)
             pauseMenu.style.display = 'none';
-        }
     }
 
-    restartGame() {
+    async restartGame() {
         if (confirm('Restart game?')) {
             this.hidePauseMenu();
-            this.loadInitialScene();
+            await this.loadInitialScene();
         }
     }
 
     quitToMenu() {
-        if (confirm('Quit to main menu? All progress will be lost.')) {
+        if (confirm('Quit to main menu? All progress will be lost.'))
             window.location.href = 'index.html';
-        }
     }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const gameStyles = `
-        <style>
-            .character {
-                position: absolute;
-                transition: all 0.5s ease;
-                max-width: 80%;
-                max-height: 80%;
-                z-index: 10;
-            }
-            
-            .character.hidden {
-                opacity: 0;
-                pointer-events: none;
-            }
-            
-            .choices-container {
-                position: absolute;
-                bottom: 200px;
-                left: 0;
-                width: 100%;
-                display: none;
-                flex-direction: column;
-                align-items: center;
-                gap: 15px;
-                padding: 20px;
-                z-index: 100;
-            }
-            
-            .choice-btn {
-                background: rgba(255, 255, 255, 0.95);
-                color: #333;
-                padding: 15px 30px;
-                border: none;
-                border-radius: 25px;
-                font-size: 1rem;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                min-width: 300px;
-                text-align: center;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                backdrop-filter: blur(10px);
-            }
-            
-            .choice-btn:hover {
-                background: white;
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            }
-            
-            #autoBtn, #skipBtn {
-                display: none !important;
-            }
-        </style>
-    `;
-
-    document.head.insertAdjacentHTML('beforeend', gameStyles);
-
     window.gameEngine = new NovelGameEngine();
     await window.gameEngine.init();
 });

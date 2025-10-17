@@ -1,10 +1,7 @@
 class NovelPlatformApp {
     constructor() {
         this.games = [];
-        this.currentGame = null;
         this.isLoading = false;
-
-        this.init();
     }
 
     async init() {
@@ -79,29 +76,25 @@ class NovelPlatformApp {
 
     attachGameCardListeners() {
         document.querySelectorAll('.game-card').forEach(card => {
-            card.addEventListener('click', (e) => {
+            card.addEventListener('click', async e => {
                 if (e.target.closest('.game-card')) {
                     const gameId = parseInt(card.getAttribute('data-game-id'));
-                    this.showGameModal(gameId);
+                    await this.showGameModal(gameId);
                 }
             });
 
             // Эффекты при наведении
-            card.addEventListener('mouseenter', () => {
-                card.style.transform = 'translateY(-5px)';
-            });
+            card.addEventListener('mouseenter', () =>
+                card.style.transform = 'translateY(-5px)');
 
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = 'translateY(0)';
-            });
+            card.addEventListener('mouseleave', () =>
+                card.style.transform = 'translateY(0)');
         });
     }
 
     async showGameModal(gameId) {
         const game = this.games.find(g => g.id === gameId);
         if (!game) return;
-
-        this.currentGame = game;
 
         try {
             // Загружаем детальную информацию об игре
@@ -146,16 +139,14 @@ class NovelPlatformApp {
                 </div>
             `;
 
-            this.showModal('gameModal');
+            await this.showModal('gameModal');
 
             // Обработчики событий модального окна
-            document.getElementById('playBtn').addEventListener('click', () => {
-                this.startGame(gameDetail.game);
-            });
+            document.getElementById('playBtn').addEventListener('click', () =>
+                this.startGame(gameDetail.game));
 
-            document.getElementById('closeModalBtn').addEventListener('click', () => {
-                this.hideModal('gameModal');
-            });
+            document.getElementById('closeModalBtn').addEventListener('click', () =>
+                this.hideModal('gameModal'));
 
         } catch (error) {
             console.error('Error loading game details:', error);
@@ -176,9 +167,8 @@ class NovelPlatformApp {
                     scene_id: data.scene.scene_id
                 });
 
-                if (data.first_dialogue_id) {
+                if (data.first_dialogue_id)
                     params.append('first_dialogue_id', data.first_dialogue_id);
-                }
 
                 window.location.href = `game.html?${params.toString()}`;
             }
@@ -189,23 +179,22 @@ class NovelPlatformApp {
         }
     }
 
-    showModal(modalId) {
+    async showModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
 
         modal.style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Блокируем скролл
-        Utils.fadeIn(modal);
+        document.body.style.overflow = 'hidden';
+        await Utils.fadeIn(modal);
     }
 
-    hideModal(modalId) {
+    async hideModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
 
-        Utils.fadeOut(modal).then(() => {
-            modal.style.display = 'none';
-            document.body.style.overflow = ''; // Восстанавливаем скролл
-        });
+        await Utils.fadeOut(modal);
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
     }
 
     showLoading(show, message = 'Загрузка...') {
@@ -227,9 +216,8 @@ class NovelPlatformApp {
         if (show) {
             loadingElement.style.display = 'flex';
             loadingElement.querySelector('.loading-text').textContent = message;
-        } else {
+        } else
             loadingElement.style.display = 'none';
-        }
     }
 
     showError(message, duration = 5000) {
@@ -259,16 +247,11 @@ class NovelPlatformApp {
 
         // Обработчики закрытия
         const closeBtn = errorElement.querySelector('.error-close');
-        closeBtn.addEventListener('click', () => {
-            this.removeError(errorElement);
-        });
+        closeBtn.addEventListener('click', () => this.removeError(errorElement));
 
         // Автоматическое закрытие
-        if (duration > 0) {
-            setTimeout(() => {
-                this.removeError(errorElement);
-            }, duration);
-        }
+        if (duration > 0)
+            setTimeout(() => this.removeError(errorElement), duration);
 
         return errorElement;
     }
@@ -277,9 +260,8 @@ class NovelPlatformApp {
         if (errorElement && errorElement.parentNode) {
             errorElement.classList.remove('show');
             setTimeout(() => {
-                if (errorElement.parentNode) {
+                if (errorElement.parentNode)
                     errorElement.parentNode.removeChild(errorElement);
-                }
             }, 300);
         }
     }
@@ -287,32 +269,28 @@ class NovelPlatformApp {
     setupEventListeners() {
         return new Promise((resolve) => {
             // Закрытие модального окна по клику вне контента
-            document.addEventListener('click', (e) => {
-                if (e.target.classList.contains('modal')) {
-                    this.hideModal('gameModal');
-                }
+            document.addEventListener('click', async e => {
+                if (e.target.classList.contains('modal'))
+                    await this.hideModal('gameModal');
             });
 
             // Закрытие модального окна по крестику
             const closeBtn = document.querySelector('.modal .close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    this.hideModal('gameModal');
-                });
-            }
+            if (closeBtn)
+                closeBtn.addEventListener('click', async () =>
+                    await this.hideModal('gameModal'));
 
             // Закрытие по ESC
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    this.hideModal('gameModal');
-                }
+            document.addEventListener('keydown', async e => {
+                if (e.key === 'Escape')
+                    await this.hideModal('gameModal');
             });
 
             // Обновление по F5
-            document.addEventListener('keydown', (e) => {
+            document.addEventListener('keydown', async e => {
                 if (e.key === 'F5') {
                     e.preventDefault();
-                    this.loadGames();
+                    await this.loadGames();
                 }
             });
 
@@ -322,155 +300,8 @@ class NovelPlatformApp {
 }
 
 // Инициализация приложения когда DOM загружен
-document.addEventListener('DOMContentLoaded', () => {
-    // Добавляем стили для ошибок
-    const errorStyles = `
-        <style>
-            .error-container {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                max-width: 400px;
-            }
-            
-            .error-message {
-                background: #f8d7da;
-                color: #721c24;
-                padding: 12px 16px;
-                margin-bottom: 10px;
-                border-radius: 8px;
-                border: 1px solid #f5c6cb;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                transform: translateX(100%);
-                opacity: 0;
-                transition: all 0.3s ease;
-            }
-            
-            .error-message.show {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            
-            .error-icon {
-                font-size: 16px;
-            }
-            
-            .error-text {
-                flex: 1;
-                font-size: 14px;
-            }
-            
-            .error-close {
-                background: none;
-                border: none;
-                font-size: 18px;
-                cursor: pointer;
-                color: #721c24;
-                padding: 0;
-                width: 20px;
-                height: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            
-            .no-games {
-                text-align: center;
-                padding: 40px;
-                color: #666;
-            }
-            
-            .no-games-icon {
-                font-size: 4rem;
-                margin-bottom: 20px;
-            }
-            
-            .game-stats {
-                display: flex;
-                gap: 15px;
-                margin: 10px 0;
-            }
-            
-            .stat {
-                background: #f8f9fa;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 0.8rem;
-                color: #666;
-            }
-            
-            .game-description {
-                color: #666;
-                font-size: 0.9rem;
-                line-height: 1.4;
-                margin-top: 10px;
-            }
-            
-            .modal-header {
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-bottom: 1px solid #eee;
-            }
-            
-            .modal-body {
-                display: flex;
-                gap: 20px;
-                margin-bottom: 20px;
-            }
-            
-            .game-image-large {
-                width: 120px;
-                height: 160px;
-                background: linear-gradient(45deg, #667eea, #764ba2);
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 3rem;
-                flex-shrink: 0;
-            }
-            
-            .game-details {
-                flex: 1;
-            }
-            
-            .detail-item {
-                margin-bottom: 10px;
-                display: flex;
-            }
-            
-            .detail-item.full-width {
-                flex-direction: column;
-            }
-            
-            .detail-item strong {
-                min-width: 140px;
-                color: #333;
-            }
-            
-            .detail-item p {
-                margin: 5px 0 0 0;
-                color: #666;
-                line-height: 1.4;
-            }
-            
-            .modal-actions {
-                display: flex;
-                gap: 10px;
-                justify-content: flex-end;
-            }
-            
-            .btn-icon {
-                margin-right: 8px;
-            }
-        </style>
-    `;
-
-    document.head.insertAdjacentHTML('beforeend', errorStyles);
-
-    // Запускаем приложение
+document.addEventListener('DOMContentLoaded', async () => {
     window.novelApp = new NovelPlatformApp();
+    await window.novelApp.init();
+    window.novelApp.showLoading(false);
 });

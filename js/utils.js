@@ -84,8 +84,6 @@ class Utils {
     static fadeIn(element, duration = 300) {
         return new Promise(resolve => {
             element.style.opacity = '0';
-            element.style.display = 'block';
-
             const start = performance.now();
 
             function animate(time) {
