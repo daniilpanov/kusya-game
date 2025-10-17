@@ -1,0 +1,9 @@
+.git/
+.idea/
+apache/
+mysql/
+mysql_data/
+php/
+.env
+.gitignore
+docker-compose.yml
