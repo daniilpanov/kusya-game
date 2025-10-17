@@ -56,11 +56,7 @@ class NovelGameEngine {
 
         try {
             await this.loadScene(this.currentSceneId);
-
-            if (this.firstDialogueId)
-                await this.loadDialogues(this.firstDialogueId);
-            else
-                await this.loadDialogues();
+            await this.loadDialogues();
         } catch (error) {
             console.error('Error loading initial scene:', error);
             this.showError('Не удалось загрузить начальную сцену');
@@ -186,7 +182,7 @@ class NovelGameEngine {
         while (this.currentDialogueIndex < this.currentDialogues.length) {
             const dialogue = this.currentDialogues[this.currentDialogueIndex];
             await this.displayDialogue(dialogue);
-            this.currentDialogueIndex++;
+            ++this.currentDialogueIndex;
         }
     }
 
@@ -195,7 +191,8 @@ class NovelGameEngine {
             await this.applyCharacterChanges(dialogue.character_changes);
 
         if (dialogue.character_id) {
-            this.characterName.textContent = this.getCharacterDisplayName(dialogue.character_id);
+            const characterName = this.getCharacterDisplayName(dialogue.character_id);
+            this.characterName.textContent = characterName;
             this.characterName.style.display = 'block';
         } else
             this.characterName.style.display = 'none';
@@ -287,7 +284,7 @@ class NovelGameEngine {
             const choicesData = await this.loadChoices(choiceDialogueId);
             await this.displayChoices(choicesData);
         } catch (error) {
-            this.showError('Failed to load choices');
+            this.showError('Не удалось загрузить варианты выбора');
         }
     }
 
@@ -341,7 +338,7 @@ class NovelGameEngine {
             if (response.success)
                 await this.processChoiceResult(response);
         } catch (error) {
-            this.showError('Failed to process choice');
+            this.showError('Не удалось обработать выбор');
         }
     }
 
@@ -362,16 +359,21 @@ class NovelGameEngine {
     }
 
     async transitionToScene(sceneId) {
-        await this.showLoading('Loading new scene...');
+        await this.showLoading('Переход к новой сцене...');
 
         try {
             await this.loadScene(sceneId);
             await this.loadDialogues();
         } catch (error) {
-            this.showError('Failed to transition to new scene');
+            this.showError('Не удалось перейти к новой сцене');
         } finally {
             await this.hideLoading();
         }
+    }
+
+    getCharacterDisplayName(characterId) {
+        const characterConfig = this.currentScene?.character_configs?.[characterId];
+        return characterConfig?.name || characterId;
     }
 
     showDialogueContainer() {
@@ -409,17 +411,6 @@ class NovelGameEngine {
             this.dialogueContainer.addEventListener('click', continueHandler);
             document.addEventListener('keydown', keyHandler);
         });
-    }
-
-    getCharacterDisplayName(characterId) {
-        const nameMap = {
-            'hero': 'Hero',
-            'npc': 'Stranger',
-            'main_character': 'Main Character',
-            'narrator': ''
-        };
-
-        return nameMap[characterId] || characterId;
     }
 
     clearScene() {
@@ -467,12 +458,6 @@ class NovelGameEngine {
     }
 
     async setupEventListeners() {
-        const autoBtn = document.getElementById('autoBtn');
-        const skipBtn = document.getElementById('skipBtn');
-
-        if (autoBtn) autoBtn.style.display = 'none';
-        if (skipBtn) skipBtn.style.display = 'none';
-
         const menuBtn = document.getElementById('menuBtn');
         const resumeBtn = document.getElementById('resumeBtn');
         const restartBtn = document.getElementById('restartBtn');
@@ -519,14 +504,14 @@ class NovelGameEngine {
     }
 
     async restartGame() {
-        if (confirm('Restart game?')) {
+        if (confirm('Начать игру заново?')) {
             this.hidePauseMenu();
             await this.loadInitialScene();
         }
     }
 
     quitToMenu() {
-        if (confirm('Quit to main menu? All progress will be lost.'))
+        if (confirm('Выйти в главное меню? Весь прогресс будет потерян.'))
             window.location.href = 'index.html';
     }
 }

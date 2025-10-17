@@ -97,8 +97,7 @@ function getSceneInitialDialogues($pdo, $sceneId) {
         FROM dialogues d
         JOIN scenes s ON d.scene_id = s.id
         WHERE s.scene_external_id = :scene_id
-        ORDER BY d.dialogue_order ASC
-        LIMIT 10
+        ORDER BY d.dialogue_order
     ";
 
     $stmt = $pdo->prepare($query);
