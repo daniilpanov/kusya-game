@@ -32,12 +32,15 @@ try {
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        if (end($uriParts) === 'dialogues') {
-            // GET /api/scenes/{id}/dialogues - получить диалоги сцены
-            getSceneDialogues($pdo, $sceneId);
-        } else {
-            // GET /api/scenes/{id} - получить сцену
-            getScene($pdo, $sceneId);
+        $startFrom = $_GET['start_from'] ?? null;
+
+        // Если запрос с start_from - возвращаем диалоги
+        if ($startFrom) {
+            getDialoguesFromId($pdo, $startFrom);
+        }
+        // Если нет start_from - возвращаем данные сцены и диалоги
+        else {
+            getSceneWithDialogues($pdo, $sceneId);
         }
     } else {
         throw new Exception('Method not allowed', 405);
@@ -45,18 +48,19 @@ try {
 
 } catch (Exception $e) {
     $code = $e->getCode() ?: 400;
-    http_response_code((int) $code);
+    http_response_code($code);
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
     ]);
 }
 
-function getScene($pdo, $sceneId) {
+function getSceneWithDialogues($pdo, $sceneId) {
+    // Получаем данные сцены
     $query = "
-        SELECT s.scene_external_id, s.background, s.music, s.initial_characters
-        FROM scenes s
-        WHERE s.scene_external_id = :scene_id
+        SELECT scene_external_id, background, music, initial_characters 
+        FROM scenes 
+        WHERE scene_external_id = :scene_id
     ";
 
     $stmt = $pdo->prepare($query);
@@ -68,87 +72,82 @@ function getScene($pdo, $sceneId) {
         throw new Exception('Scene not found', 404);
     }
 
-    echo json_encode([
+    // Получаем диалоги сцены
+    $query = "
+        SELECT d.* 
+        FROM dialogues d
+        JOIN scenes s ON d.scene_id = s.id
+        WHERE s.scene_external_id = :scene_id 
+        ORDER BY d.dialogue_order ASC
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->bindValue(':scene_id', $sceneId);
+    $stmt->execute();
+    $allDialogues = $stmt->fetchAll();
+
+    $dialogues = [];
+    $choiceDialogue = null;
+
+    foreach ($allDialogues as $dialogue) {
+        if ($dialogue['is_choice']) {
+            $choiceDialogue = $dialogue;
+            break;
+        }
+        $dialogues[] = formatDialogue($dialogue);
+    }
+
+    $response = [
         'success' => true,
         'scene' => [
             'scene_id' => $scene['scene_external_id'],
             'background' => $scene['background'],
             'music' => $scene['music'],
             'initial_characters' => json_decode($scene['initial_characters'], true)
-        ]
-    ]);
-}
+        ],
+        'dialogues' => $dialogues
+    ];
 
-function getSceneDialogues($pdo, $sceneId) {
-    $dialogueId = $_GET['start_from'] ?? null;
+    if ($choiceDialogue) {
+        $response['choice_dialogue'] = [
+            'id' => $choiceDialogue['id'],
+            'text' => $choiceDialogue['text']
+        ];
 
-    if ($dialogueId) {
-        // Начинаем с определенного диалога
-        getDialoguesFromId($pdo, $dialogueId);
-    } else {
-        // Начинаем с начала сцены
-        getSceneInitialDialogues($pdo, $sceneId);
-    }
-}
-
-function getSceneInitialDialogues($pdo, $sceneId) {
-    $query = "
-        SELECT d.*
-        FROM dialogues d
-        JOIN scenes s ON d.scene_id = s.id
-        WHERE s.scene_external_id = :scene_id
-        ORDER BY d.dialogue_order
-    ";
-
-    $stmt = $pdo->prepare($query);
-    $stmt->bindValue(':scene_id', $sceneId);
-    $stmt->execute();
-    $dialogues = $stmt->fetchAll();
-
-    $formattedDialogues = [];
-    foreach ($dialogues as $dialogue) {
-        $formattedDialogues[] = formatDialogue($dialogue);
+        $choices = getChoicesForDialogue($pdo, $choiceDialogue['id']);
+        $response['choice_dialogue']['choices'] = $choices;
     }
 
-    echo json_encode([
-        'success' => true,
-        'dialogues' => $formattedDialogues,
-        'has_more' => count($dialogues) === 10
-    ]);
+    echo json_encode($response);
 }
 
 function getDialoguesFromId($pdo, $dialogueId) {
     $query = "
-        SELECT d.*
-        FROM dialogues d
-        WHERE d.id = :dialogue_id
+        SELECT d1.* 
+        FROM dialogues d1
+        WHERE d1.id = :dialogue_id
+        UNION ALL
+        SELECT d2.* 
+        FROM dialogues d2
+        WHERE d2.id > :dialogue_id 
+        AND d2.scene_id = (SELECT scene_id FROM dialogues WHERE id = :dialogue_id)
+        ORDER BY dialogue_order ASC
     ";
 
     $stmt = $pdo->prepare($query);
     $stmt->bindValue(':dialogue_id', $dialogueId, PDO::PARAM_INT);
     $stmt->execute();
-    $startDialogue = $stmt->fetch();
+    $allDialogues = $stmt->fetchAll();
 
-    if (!$startDialogue) {
-        throw new Exception('Dialogue not found', 404);
-    }
-
-    // Получаем цепочку диалогов
     $dialogues = [];
-    $current = $startDialogue;
+    $choiceDialogue = null;
 
-    while ($current && !$current['is_choice'] && !$current['next_scene_id']) {
-        $dialogues[] = formatDialogue($current);
-
-        if ($current['next_dialogue_id']) {
-            $query = "SELECT * FROM dialogues WHERE id = :next_id";
-            $stmt = $pdo->prepare($query);
-            $stmt->bindValue(':next_id', $current['next_dialogue_id'], PDO::PARAM_INT);
-            $stmt->execute();
-            $current = $stmt->fetch();
-        } else {
-            $current = null;
+    foreach ($allDialogues as $dialogue) {
+        if ($dialogue['is_choice']) {
+            $choiceDialogue = $dialogue;
+            break;
         }
+        $dialogues[] = formatDialogue($dialogue);
     }
 
     $response = [
@@ -156,22 +155,31 @@ function getDialoguesFromId($pdo, $dialogueId) {
         'dialogues' => $dialogues
     ];
 
-    // Если текущий диалог - выбор, добавляем варианты
-    if ($current && $current['is_choice']) {
-        $response['next_action'] = [
-            'type' => 'choice',
-            'choice_dialogue_id' => $current['id']
+    if ($choiceDialogue) {
+        $response['choice_dialogue'] = [
+            'id' => $choiceDialogue['id'],
+            'text' => $choiceDialogue['text']
         ];
-    }
-    // Если переход на сцену
-    elseif ($current && $current['next_scene_id']) {
-        $response['next_action'] = [
-            'type' => 'scene_transition',
-            'next_scene_id' => $current['next_scene_id']
-        ];
+
+        $choices = getChoicesForDialogue($pdo, $choiceDialogue['id']);
+        $response['choice_dialogue']['choices'] = $choices;
     }
 
     echo json_encode($response);
+}
+
+function getChoicesForDialogue($pdo, $dialogueId) {
+    $query = "
+        SELECT c.id, c.choice_text, c.next_dialogue_id, c.next_scene_id
+        FROM choices c
+        WHERE c.dialogue_id = :dialogue_id
+        ORDER BY c.id
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->bindValue(':dialogue_id', $dialogueId, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
 }
 
 function formatDialogue($dialogue) {

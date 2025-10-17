@@ -30,7 +30,6 @@ class NovelGameEngine {
 
         this.gameId = params.get('game_id');
         this.currentSceneId = params.get('scene_id');
-        this.firstDialogueId = params.get('first_dialogue_id');
 
         if (!this.gameId || !this.currentSceneId)
             throw new Error('Missing required game parameters');
@@ -56,10 +55,12 @@ class NovelGameEngine {
 
         try {
             await this.loadScene(this.currentSceneId);
-            await this.loadDialogues();
+            await this.startSceneDialogues();
         } catch (error) {
             console.error('Error loading initial scene:', error);
             this.showError('Не удалось загрузить начальную сцену');
+        } finally {
+            await this.hideLoading();
         }
     }
 
@@ -70,6 +71,7 @@ class NovelGameEngine {
             if (data.success) {
                 this.currentScene = data.scene;
                 this.currentSceneId = data.scene.scene_id;
+                this.currentDialogues = data.dialogues || [];
 
                 await this.setupScene(this.currentScene);
             }
@@ -153,11 +155,20 @@ class NovelGameEngine {
         return character;
     }
 
-    async loadDialogues() {
-        try {
-            let url = `/api/scenes/${this.currentSceneId}/dialogues`;
+    async startSceneDialogues() {
+        this.currentDialogueIndex = 0;
 
-            const data = await Utils.fetchJSON(url);
+        if (this.currentDialogues.length > 0)
+            await this.startDialogueChain();
+        else if (this.currentScene.choice_dialogue)
+            await this.showChoiceDialogue(this.currentScene.choice_dialogue);
+        else
+            this.hideDialogueContainer();
+    }
+
+    async loadDialogues(dialogueId) {
+        try {
+            const data = await Utils.fetchJSON(`/api/scenes/${this.currentSceneId}?start_from=${dialogueId}`);
 
             if (data.success) {
                 this.currentDialogues = data.dialogues || [];
@@ -165,9 +176,8 @@ class NovelGameEngine {
 
                 if (this.currentDialogues.length > 0)
                     await this.startDialogueChain();
-
-                if (data.next_action)
-                    await this.handleNextAction(data.next_action);
+                else if (data.choice_dialogue)
+                    await this.showChoiceDialogue(data.choice_dialogue);
                 else
                     this.hideDialogueContainer();
             }
@@ -191,8 +201,7 @@ class NovelGameEngine {
             await this.applyCharacterChanges(dialogue.character_changes);
 
         if (dialogue.character_id) {
-            const characterName = this.getCharacterDisplayName(dialogue.character_id);
-            this.characterName.textContent = characterName;
+            this.characterName.textContent = this.getCharacterDisplayName(dialogue.character_id);
             this.characterName.style.display = 'block';
         } else
             this.characterName.style.display = 'none';
@@ -263,34 +272,13 @@ class NovelGameEngine {
         }
     }
 
-    async handleNextAction(nextAction) {
-        if (!nextAction) return;
+    async showChoiceDialogue(choiceDialogue) {
+        this.showDialogueContainer();
 
-        switch (nextAction.type) {
-            case 'choice':
-                await this.showChoices(nextAction.choice_dialogue_id);
-                break;
+        this.characterName.style.display = 'none';
+        await this.showDialogueText(choiceDialogue.text);
 
-            case 'scene_transition':
-                await this.transitionToScene(nextAction.next_scene_id);
-                break;
-        }
-    }
-
-    async showChoices(choiceDialogueId) {
-        this.hideDialogueContainer();
-
-        try {
-            const choicesData = await this.loadChoices(choiceDialogueId);
-            await this.displayChoices(choicesData);
-        } catch (error) {
-            this.showError('Не удалось загрузить варианты выбора');
-        }
-    }
-
-    async loadChoices(choiceDialogueId) {
-        const response = await Utils.fetchJSON(`/api/choices?dialogue_id=${choiceDialogueId}`);
-        return response.choices;
+        await this.displayChoices(choiceDialogue.choices);
     }
 
     async displayChoices(choices) {
@@ -355,6 +343,10 @@ class NovelGameEngine {
             case 'continue_dialogue':
                 await this.loadDialogues(nextAction.dialogue_id);
                 break;
+
+            case 'game_end':
+                await this.endGame();
+                break;
         }
     }
 
@@ -363,7 +355,7 @@ class NovelGameEngine {
 
         try {
             await this.loadScene(sceneId);
-            await this.loadDialogues();
+            await this.startSceneDialogues();
         } catch (error) {
             this.showError('Не удалось перейти к новой сцене');
         } finally {
@@ -371,9 +363,18 @@ class NovelGameEngine {
         }
     }
 
+    async endGame() {
+        await this.showLoading('Завершение игры...');
+
+        setTimeout(() => {
+            if (confirm('Игра завершена! Хотите вернуться в главное меню?'))
+                window.location.href = 'index.html';
+        }, 1000);
+    }
+
     getCharacterDisplayName(characterId) {
-        const characterConfig = this.currentScene?.character_configs?.[characterId];
-        return characterConfig?.name || characterId;
+        const character = this.currentScene?.initial_characters?.find(char => char.id === characterId);
+        return character?.name || characterId;
     }
 
     showDialogueContainer() {

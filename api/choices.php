@@ -23,7 +23,7 @@ try {
 
 } catch (Exception $e) {
     $code = $e->getCode() ?: 400;
-    http_response_code((int) $code);
+    http_response_code($code);
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
@@ -40,7 +40,6 @@ function handleChoice($pdo) {
         throw new Exception('Choice ID and Game ID are required', 400);
     }
 
-    // Находим информацию о выборе
     $query = "
         SELECT c.*, d.next_scene_id, d.next_dialogue_id
         FROM choices c
@@ -65,34 +64,11 @@ function handleChoice($pdo) {
         ]
     ];
 
-    // Определяем что делать после выбора
     if ($choice['next_scene_id']) {
         $response['next_action'] = [
             'type' => 'scene_transition',
             'scene_id' => $choice['next_scene_id']
         ];
-
-        // Получаем информацию о следующей сцене
-        $query = "
-            SELECT s.scene_external_id, s.background, s.music, s.initial_characters
-            FROM scenes s
-            WHERE s.scene_external_id = :scene_id AND s.game_id = :game_id
-        ";
-
-        $stmt = $pdo->prepare($query);
-        $stmt->bindValue(':scene_id', $choice['next_scene_id']);
-        $stmt->bindValue(':game_id', $gameId, PDO::PARAM_INT);
-        $stmt->execute();
-        $nextScene = $stmt->fetch();
-
-        if ($nextScene) {
-            $response['next_scene'] = [
-                'scene_id' => $nextScene['scene_external_id'],
-                'background' => $nextScene['background'],
-                'music' => $nextScene['music'],
-                'initial_characters' => json_decode($nextScene['initial_characters'], true)
-            ];
-        }
     }
     elseif ($choice['next_dialogue_id']) {
         $response['next_action'] = [
@@ -101,9 +77,10 @@ function handleChoice($pdo) {
         ];
     }
     else {
-        throw new Exception('Invalid choice configuration', 500);
+        $response['next_action'] = [
+            'type' => 'game_end'
+        ];
     }
 
     echo json_encode($response);
 }
-?>
