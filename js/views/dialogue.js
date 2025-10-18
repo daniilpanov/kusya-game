@@ -1,13 +1,13 @@
-class DialogueView {
+class DialogAction {
     textView = document.getElementById('dialogueText');
     characterNameView = document.getElementById('characterName');
 
-    constructor(characterName, text) {
-        this.characterName = characterName;
+    constructor(text, characterName = undefined) {
         this.text = text;
+        this.characterName = characterName;
     }
 
-    async render() {
+    async doAction() {
         if (this.characterName)
             await Utils.typeText(this.characterNameView, this.characterName, 30);
 

@@ -137,7 +137,7 @@ class Utils {
                 if (index < text.length) {
                     const char = text.charAt(index);
                     element.innerHTML += char === ' ' ? '&nbsp;' : char;
-                    index++;
+                    ++index;
                     setTimeout(type, speed);
                 } else {
                     resolve();

@@ -19,7 +19,8 @@ class CharacterView {
 
         await new Promise((resolve, reject) => {
             this.sprite.onload = resolve;
-            this.sprite.onerror = reject;
+            // this.sprite.onerror = reject;
+            this.sprite.alt = "sprite";
             this.sprite.src = src;
         });
 

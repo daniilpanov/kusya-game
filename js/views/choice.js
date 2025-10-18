@@ -1,4 +1,4 @@
-class ChoiceView {
+class ChoiceAction {
     choiceContainer = document.getElementById('choicesContainer');
     choiceWrapper = null;
     isRendered = false;
@@ -8,26 +8,28 @@ class ChoiceView {
         this.list = listOfVariants;
     }
 
-    render() {
+    async doAction() {
         if (this.isRendered) return;
 
         this.choiceWrapper = document.createElement('div');
         this.choiceWrapper.className = 'choice-wrapper';
 
-        for (const choice of this.list) {
+        for (const choiceAlias in this.list) {
             const choiceButton = document.createElement('button');
             choiceButton.className = 'choice-btn';
-            choiceButton.textContent = choice.choice_text;
-            choiceButton.addEventListener('click', () => this.choose(choice.id));
+            choiceButton.textContent = this.list[choiceAlias];
+            choiceButton.addEventListener('click', async () => await this.choose(choiceAlias));
 
             this.choiceWrapper.appendChild(choiceButton);
         }
 
         this.choiceContainer.appendChild(this.choiceWrapper);
+        this.show();
     }
 
     remove() {
         this.choiceContainer.removeChild(this.choiceWrapper);
+        this.hide();
     }
 
     show() {
@@ -38,8 +40,8 @@ class ChoiceView {
         this.choiceContainer.style.opacity = '0';
     }
 
-    choose(id) {
+    async choose(choiceAlias) {
         this.remove();
-        this.game.choose(id);
+        await this.game.choose(choiceAlias);
     }
 }

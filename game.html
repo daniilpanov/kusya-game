@@ -16,7 +16,7 @@
     <div class="characters-container" id="charactersContainer"></div>
 
     <!-- Диалоговое окно -->
-    <div class="dialogue-container" id="dialogueContainer">
+    <div class="dialogue-container active" id="dialogueContainer">
         <div class="dialogue-box">
             <div class="character-name" id="characterName"></div>
             <div class="dialogue-text" id="dialogueText"></div>
@@ -33,10 +33,10 @@
     </div>
 
     <!-- Индикатор загрузки -->
-    <div class="loading-overlay" id="loadingOverlay">
+    <!--<div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
         <div class="loading-text">Загрузка...</div>
-    </div>
+    </div>-->
 </div>
 
 <!-- Меню паузы -->
@@ -50,6 +50,38 @@
 </div>
 
 <script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/views/character.js"></script>
+<script src="js/views/choice.js"></script>
+<script src="js/views/dialogue.js"></script>
+<script src="js/views/scene.js"></script>
 <script src="js/game.js"></script>
+
+<script>
+    document.getElementById('menuBtn').onclick = () => {
+        document.getElementById('pauseMenu').style.display = 'block';
+    };
+    document.getElementById('resumeBtn').onclick = () => {
+        document.getElementById('pauseMenu').style.display = 'none';
+    };
+    document.getElementById('restartBtn').onclick = async () => {
+        if (confirm('Начать игру заново?'))
+            window.location.reload();
+    };
+    document.getElementById('quitBtn').onclick = () => {
+        window.location.href = 'index.html';
+    };
+
+    const params = Utils.getUrlParams();
+
+    const gameId = params.get('game_id');
+    const currentSceneId = params.get('scene_id');
+
+    if (!gameId || !currentSceneId)
+        throw new Error('Missing required game parameters');
+
+    const game = new Game();
+    game.initScene(new SceneAPI(currentSceneId)).then(() => game.start());
+</script>
 </body>
 </html>

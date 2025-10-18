@@ -1,8 +1,8 @@
 class SceneView {
     background = undefined;
     characters = {};
-    dialogues = [];
-    currentDialogue = undefined;
+    actions = [];
+    currentAction = undefined;
 
     constructor(characters) {
         for (const character of characters)
@@ -19,13 +19,13 @@ class SceneView {
         });
     }
 
-    loadDialogues(dialogues) {
-        this.dialogues = dialogues;
+    loadActions(actions) {
+        this.actions = actions.reverse();
     }
 
-    nextDialogue() {
-        this.currentDialogue = this.dialogues.pop();
-        this.render();
+    async nextAction() {
+        this.currentAction = this.actions.pop();
+        await this.currentAction.doAction();
     }
 
     showCharacter(id) {
@@ -37,9 +37,8 @@ class SceneView {
     }
 
     render() {
-        for (const character of this.characters)
-            character.render();
-
-        this.currentDialogue.render();
+        return;
+        for (const character in this.characters)
+            this.characters[character].render();
     }
 }

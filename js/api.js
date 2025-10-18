@@ -11,7 +11,7 @@ async function fetchJson(url, method = 'get', body = undefined, timeout = 3000) 
         .finally(() => clearTimeout(id));
 }
 
-class Game {
+class GameAPI {
     constructor(id) {
         this.id = id;
     }
@@ -24,12 +24,12 @@ class Game {
         return fetchJson(`/games/${this.id}`);
     }
 
-    getStartScenes() {
+    getStartSceneId() {
         return fetchJson(`/games/${this.id}/play`);
     }
 }
 
-class Scene {
+class SceneAPI {
     constructor(id) {
         this.id = id;
     }
@@ -38,8 +38,8 @@ class Scene {
         return fetchJson(`/scenes/${this.id}`);
     }
 
-    getDialogues(afterChoiceId = undefined) {
-        const url = `/scenes/${this.id}/dialogues` + (afterChoiceId ? `?choice=${afterChoiceId}` : '');
+    getActions(afterChoiceId = undefined) {
+        const url = `/scenes/${this.id}/actions` + (afterChoiceId ? `?choice_alias=${afterChoiceId}` : '');
         return fetchJson(url);
     }
 }

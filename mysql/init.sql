@@ -21,35 +21,19 @@ CREATE TABLE scenes
     INDEX              idx_game_scene (game_id, scene_external_id)
 );
 
--- Таблица диалогов
-CREATE TABLE dialogues
+-- Actions
+CREATE TABLE actions
 (
     id                INT PRIMARY KEY AUTO_INCREMENT,
+    parent_id         INT      NULL,
     scene_id          INT  NOT NULL,
-    dialogue_order    INT  NOT NULL,
-    character_id      VARCHAR(50),
-    text              TEXT NOT NULL,
-    character_changes JSON,
-    next_dialogue_id  INT NULL,
-    next_scene_id     VARCHAR(50) NULL,
-    is_choice         BOOLEAN   DEFAULT FALSE,
-    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    action            JSON,
+    has_choice        BOOLEAN DEFAULT FALSE,
+    choice_text       TEXT,
+    choice_alias      VARCHAR(50),
     FOREIGN KEY (scene_id) REFERENCES scenes (id),
-    FOREIGN KEY (next_dialogue_id) REFERENCES dialogues (id),
-    INDEX             idx_scene_order (scene_id, dialogue_order)
-);
-
--- Таблица выборов (для ветвления)
-CREATE TABLE choices
-(
-    id               INT PRIMARY KEY AUTO_INCREMENT,
-    dialogue_id      INT  NOT NULL,
-    choice_text      TEXT NOT NULL,
-    next_dialogue_id INT NULL,
-    next_scene_id    VARCHAR(50) NULL,
-    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (dialogue_id) REFERENCES dialogues (id),
-    FOREIGN KEY (next_dialogue_id) REFERENCES dialogues (id)
+    FOREIGN KEY (parent_id) REFERENCES actions (id),
+    UNIQUE INDEX      uid_choice_scene (scene_id, choice_alias)
 );
 
 -- Тестовые данные
@@ -67,31 +51,15 @@ VALUES (1,
           {
             "id": "hero",
             "sprite": "hero_normal.png",
-            "position": {
-              "desktop": {
-                "x": "20%",
-                "y": "50%"
-              },
-              "mobile": {
-                "x": "10%",
-                "y": "60%"
-              }
-            },
+            "x": 0.2,
+            "y": 0.8,
             "visible": true
           },
           {
             "id": "npc",
             "sprite": "npc_normal.png",
-            "position": {
-              "desktop": {
-                "x": "80%",
-                "y": "50%"
-              },
-              "mobile": {
-                "x": "70%",
-                "y": "60%"
-              }
-            },
+            "x": 0.8,
+            "y": 0.8,
             "visible": false
           }
         ]');
@@ -106,45 +74,90 @@ VALUES (2,
           {
             "id": "main_character",
             "sprite": "mc_default.png",
-            "position": {
-              "desktop": {
-                "x": "50%",
-                "y": "70%"
-              },
-              "mobile": {
-                "x": "50%",
-                "y": "80%"
-              }
-            },
+            "x": 0.4,
+            "y": 0.7,
             "visible": true
           }
         ]');
 
 -- Тестовые диалоги для сцены 1
-INSERT INTO dialogues (scene_id, dialogue_order, character_id, text, character_changes, next_dialogue_id)
-VALUES (1, 5, NULL, 'Что вы ответите незнакомцу?', NULL, NULL),
-       (1, 1, 'narrator', 'Вы оказываетесь в таинственном лесу...', NULL, 2),
-       (1, 2, 'hero', 'Интересно, что здесь происходит? Куда я попал?', NULL, 3),
-       (1, 3, NULL, 'Из-за деревьев появляется незнакомец...', '[
-         {
-           "character_id": "npc",
-           "visible": true
+INSERT INTO actions (id, parent_id, scene_id,`action`, choice_text, choice_alias, has_choice)
+VALUES (1, NULL, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Приветствую, путник! Давно я не видел здесь новых лиц.",
+           "character_id": "hero"
          }
-       ]', 4),
-       (1, 4, 'npc', 'Приветствую, путник! Давно я не видел здесь новых лиц.', '[
-         {
+       }, {
+         "action": "character",
+         "body": {
            "character_id": "hero",
            "sprite": "hero_surprised.png"
          }
-       ]', 5);
-
--- Варианты выбора
-INSERT INTO choices (dialogue_id, choice_text, next_scene_id)
-VALUES (5, 'Поздороваться вежливо', 'scene_2'),
-       (5, 'Спросить "Кто ты?"', 'scene_3'),
-       (5, 'Промолчать и уйти', 'scene_4');
+       }]', NULL, NULL, FALSE),
+       (2, 1, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Из-за деревьев появляется незнакомец..."
+         }
+       }, {
+         "action": "character",
+         "body": {
+           "character_id": "npc",
+           "visible": true
+         }
+       }]', NULL, NULL, FALSE),
+       (3, 2, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Интересно, что здесь происходит? Куда я попал?",
+           "character_id": "npc"
+         }
+       }]', NULL, NULL, FALSE),
+       (4, 3, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Вы оказываетесь в таинственном лесу..."
+         }
+       }]', NULL, NULL, FALSE),
+       (5, 4, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Что вы ответите незнакомцу?"
+         }
+       }]', NULL, NULL, TRUE),
+       (6, 5, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Привет. Очень приятно",
+           "character_id": "npc"
+         }
+       }, {"action": "end"}]', 'Поздороваться вежливо', 'welcome', FALSE),
+       (7, 5, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Я не знаю",
+           "character_id": "npc"
+         }
+       }, {"action": "end"}]', 'Спросить "Кто ты?"', 'who', FALSE),
+       (8, 5, 1, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Он ушёл"
+         }
+       }, {"action": "end"}]', 'Промолчать и уйти', 'goaway', FALSE);
 
 -- Демо диалоги
-INSERT INTO dialogues (scene_id, dialogue_order, character_id, text, character_changes, next_scene_id)
-VALUES (2, 1, 'narrator', 'Вы просыпаетесь в незнакомом городе...', NULL, 'demo_scene_2'),
-       (2, 2, 'main_character', 'Где я? Что это за место?', NULL, 'demo_scene_2');
+INSERT INTO actions (id, parent_id, scene_id, `action`)
+VALUES (9, NULL, 2, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Вы просыпаетесь в незнакомом городе..."
+         }
+       }]'),
+       (10, 9, 2, '[{
+         "action": "dialog",
+         "body": {
+           "text": "Где я? Что это за место?"
+         }
+       }, {"action": "end"}]');

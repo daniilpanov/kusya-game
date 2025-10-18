@@ -55,7 +55,7 @@ function getGamesList($pdo) {
                COUNT(DISTINCT d.id) as dialogue_count
         FROM games g
         LEFT JOIN scenes s ON g.id = s.game_id
-        LEFT JOIN dialogues d ON s.id = d.scene_id
+        LEFT JOIN actions d ON s.id = d.scene_id
         GROUP BY g.id
         ORDER BY g.created_at DESC
     ";
@@ -77,7 +77,7 @@ function getGameInfo($pdo, $gameId) {
                COUNT(DISTINCT d.id) as dialogue_count
         FROM games g
         LEFT JOIN scenes s ON g.id = s.game_id
-        LEFT JOIN dialogues d ON s.id = d.scene_id
+        LEFT JOIN actions d ON s.id = d.scene_id
         WHERE g.id = :game_id
         GROUP BY g.id
     ";
@@ -129,10 +129,10 @@ function getStartScene($pdo, $gameId) {
 
     $query = "
         SELECT d.*
-        FROM dialogues d
+        FROM actions d
         JOIN scenes s ON d.scene_id = s.id
         WHERE s.scene_external_id = :scene_id
-        AND d.dialogue_order = 1
+        AND d.parent_id = NULL
     ";
 
     $stmt = $pdo->prepare($query);
