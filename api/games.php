@@ -2,9 +2,6 @@
 require_once 'db.php';
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -19,7 +16,7 @@ try {
     $uriParts = explode('/', $requestUri);
     $gameId = null;
 
-    // Определяем ID игры из URL
+    // Game ID detection
     foreach ($uriParts as $index => $part) {
         if ($part === 'games' && isset($uriParts[$index + 1]) && is_numeric($uriParts[$index + 1])) {
             $gameId = $uriParts[$index + 1];
@@ -29,21 +26,18 @@ try {
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($gameId) {
-            // GET /api/games/{id} - информация об игре
-            if (end($uriParts) === 'play') {
-                // GET /api/games/{id}/play - начать игру
+            // GET /api/games/{id}/play
+            if (end($uriParts) === 'play')
                 getStartScene($pdo, $gameId);
-            } else {
-                // GET /api/games/{id} - информация об игре
+            // GET /api/games/{id} - game info
+            else
                 getGameInfo($pdo, $gameId);
-            }
-        } else {
-            // GET /api/games - список игр
-            getGamesList($pdo);
         }
-    } else {
-        throw new Exception('Method not allowed', 405);
+        // GET /api/games
+        else
+            getGamesList($pdo);
     }
+    else throw new Exception('Method not allowed', 405);
 
 } catch (Exception $e) {
     $code = $e->getCode() ?: 400;
@@ -115,11 +109,9 @@ function getStartScene($pdo, $gameId) {
     $stmt->execute();
     $game = $stmt->fetch();
 
-    if (!$game) {
+    if (!$game)
         throw new Exception('Game not found', 404);
-    }
 
-    // Получаем стартовую сцену
     $query = "
         SELECT s.scene_external_id, s.background, s.music, s.initial_characters
         FROM scenes s
@@ -132,11 +124,9 @@ function getStartScene($pdo, $gameId) {
     $stmt->execute();
     $scene = $stmt->fetch();
 
-    if (!$scene) {
+    if (!$scene)
         throw new Exception('Start scene not found', 404);
-    }
 
-    // Получаем первые диалоги сцены
     $query = "
         SELECT d.*
         FROM dialogues d
@@ -160,10 +150,8 @@ function getStartScene($pdo, $gameId) {
         ]
     ];
 
-    // Если есть первый диалог, добавляем его ID для начала
-    if ($firstDialogue) {
+    if ($firstDialogue)
         $response['first_dialogue_id'] = $firstDialogue['id'];
-    }
 
     echo json_encode($response);
 }
