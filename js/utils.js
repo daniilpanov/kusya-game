@@ -129,23 +129,9 @@ class Utils {
 
     // Типизированный вывод текста
     static typeText(element, text, speed = 20) {
-        return new Promise(resolve => {
-            element.innerHTML = '';
-            let index = 0;
-
-            function type() {
-                if (index < text.length) {
-                    const char = text.charAt(index);
-                    element.innerHTML += char === ' ' ? '&nbsp;' : char;
-                    ++index;
-                    setTimeout(type, speed);
-                } else {
-                    resolve();
-                }
-            }
-
-            type();
-        });
+        const typer = new TextTyper(element, text, speed);
+        typer.startTyping();
+        return typer;
     }
 
     // Проверка мобильного устройства
@@ -204,3 +190,44 @@ class Utils {
 
 // Инициализация кэша изображений
 Utils.imageCache = {};
+
+class TextTyper {
+    typerProcessId = undefined;
+    finished = false;
+
+    constructor(element, text, speed) {
+        this.element = element;
+        this.text = text;
+        this.speed = speed;
+    }
+
+    startTyping() {
+        if (this.typerProcessId)
+            return;
+
+        this.element.innerHTML = '';
+        let index = 0;
+
+        const type = () => {
+            if (index < this.text.length) {
+                const char = this.text.charAt(index);
+                this.element.innerHTML += char === ' ' ? '&nbsp;' : char;
+                ++index;
+                this.typerProcessId = setTimeout(type, this.speed);
+            } else {
+                this.finished = true;
+            }
+        }
+
+        type();
+    }
+
+    endTyping() {
+        if (!this.typerProcessId)
+            return;
+
+        clearTimeout(this.typerProcessId);
+        this.element.innerHTML = this.text;
+        this.finished = true;
+    }
+}

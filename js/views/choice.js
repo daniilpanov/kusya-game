@@ -1,4 +1,5 @@
 class ChoiceAction {
+    finished = false;
     choiceContainer = document.getElementById('choicesContainer');
     choiceWrapper = null;
     isRendered = false;
@@ -42,6 +43,10 @@ class ChoiceAction {
 
     async choose(choiceAlias) {
         this.remove();
+        this.finished = true;
         await this.game.choose(choiceAlias);
+    }
+
+    async finishAction() {
     }
 }

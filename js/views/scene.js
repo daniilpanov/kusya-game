@@ -24,6 +24,10 @@ class SceneView {
     }
 
     async nextAction() {
+        console.log(this.currentAction);
+        if (this.currentAction && !this.currentAction.finished)
+            return await this.currentAction.finishAction();
+
         this.currentAction = this.actions.pop();
         await this.currentAction.doAction();
     }

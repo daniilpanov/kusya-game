@@ -1,7 +1,8 @@
 
 class CustomAction {
-    constructor(callable) {
-        this.doAction = callable;
+    constructor(doAction, finishAction = undefined) {
+        this.doAction = doAction;
+        this.finishAction = finishAction || (async () => {});
     }
 }
 
