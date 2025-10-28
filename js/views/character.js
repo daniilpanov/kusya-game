@@ -19,9 +19,9 @@ class CharacterView {
 
         await new Promise((resolve, reject) => {
             this.sprite.onload = resolve;
-            // this.sprite.onerror = reject;
+            this.sprite.onerror = reject;
             this.sprite.alt = "sprite";
-            this.sprite.src = src;
+            this.sprite.src = `/assets/sprites/${src}`;
         });
 
         this.charactersContainer.appendChild(this.sprite);

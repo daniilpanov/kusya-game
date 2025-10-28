@@ -19,11 +19,17 @@ class Game {
             const charObj = new CharacterView(character.id);
             characters.push(charObj);
             charObj.setAnchorPosition(character.x, character.y);
-            // await charObj.loadSprite(character.sprite);
+            try {
+                await charObj.loadSprite(character.sprite);
+            } catch (e) {
+            }
         }
 
         this.sceneView = new SceneView(characters);
-        // await this.sceneView.setupBackground(scene.background);
+        try {
+            await this.sceneView.setupBackground(scene.background);
+        } catch (e) {
+        }
 
         await this.loadActions(await sceneAPI.getActions());
     }

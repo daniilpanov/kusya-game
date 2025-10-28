@@ -15,7 +15,7 @@ class SceneView {
         await new Promise((resolve, reject) => {
             this.background.onload = resolve;
             this.background.onerror = reject;
-            this.background.src = src;
+            this.background.src = `/assets/bg/${src}`;
         });
     }
 
