@@ -16,6 +16,7 @@ class SceneView {
             this.background.onload = resolve;
             this.background.onerror = reject;
             this.background.src = `/assets/bg/${src}`;
+            console.log("OKOKOK");
         });
     }
 
@@ -24,7 +25,6 @@ class SceneView {
     }
 
     async nextAction() {
-        console.log(this.currentAction);
         if (this.currentAction && !this.currentAction.finished)
             return await this.currentAction.finishAction();
 
