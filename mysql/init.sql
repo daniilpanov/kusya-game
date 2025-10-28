@@ -45,7 +45,7 @@ VALUES ('Тестовая новелла', 'scene_1'),
 INSERT INTO scenes (game_id, scene_external_id, background, music, initial_characters)
 VALUES (1,
         'scene_1',
-        'forest.jpg',
+        'forrest/secondary-background.png',
         'peaceful.mp3',
         '[
           {
@@ -68,7 +68,7 @@ VALUES (1,
 INSERT INTO scenes (game_id, scene_external_id, background, music, initial_characters)
 VALUES (2,
         'demo_start',
-        'city.jpg',
+        'forrest/secondary-background.png',
         'city_ambient.mp3',
         '[
           {
