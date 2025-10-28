@@ -58,18 +58,15 @@
 <script src="js/game.js"></script>
 
 <script>
-    document.getElementById('menuBtn').onclick = () => {
+    document.getElementById('menuBtn').onclick = () =>
         document.getElementById('pauseMenu').style.display = 'block';
-    };
-    document.getElementById('resumeBtn').onclick = () => {
+    document.getElementById('resumeBtn').onclick = () =>
         document.getElementById('pauseMenu').style.display = 'none';
-    };
+    document.getElementById('quitBtn').onclick = () =>
+        window.location.href = 'index.html';
     document.getElementById('restartBtn').onclick = async () => {
         if (confirm('Начать игру заново?'))
             window.location.reload();
-    };
-    document.getElementById('quitBtn').onclick = () => {
-        window.location.href = 'index.html';
     };
 
     const params = Utils.getUrlParams();
