@@ -23,23 +23,4 @@ class GameAPI {
     getInfoById() {
         return fetchJson(`/games/${this.id}`);
     }
-
-    getStartSceneId() {
-        return fetchJson(`/games/${this.id}/play`);
-    }
-}
-
-class SceneAPI {
-    constructor(id) {
-        this.id = id;
-    }
-
-    getById() {
-        return fetchJson(`/scenes/${this.id}`);
-    }
-
-    getActions(afterChoiceId = undefined) {
-        const url = `/scenes/${this.id}/actions` + (afterChoiceId ? `?choice_alias=${afterChoiceId}` : '');
-        return fetchJson(url);
-    }
 }

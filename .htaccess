@@ -11,11 +11,6 @@ RewriteRule ^ - [L]
 # Games
 RewriteRule ^api/games/?$ api/games.php [QSA,L]
 RewriteRule ^api/games/([^/]+)/?$ api/games.php [QSA,L]
-RewriteRule ^api/games/([^/]+)/play/?$ api/games.php [QSA,L]
-
-# Scenes
-RewriteRule ^api/scenes/([^/]+)/?$ api/scenes.php [QSA,L]
-RewriteRule ^api/scenes/([^/]+)/actions/?$ api/actions.php [QSA,L]
 
 # SPA on index.html
 RewriteRule ^(.*)$ index.html [QSA,L]
