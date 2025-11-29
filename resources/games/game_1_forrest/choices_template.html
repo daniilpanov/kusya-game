@@ -1,0 +1,33 @@
+<style>
+    .ng--author {
+        background-color: darkred;
+        color: white;
+    }
+    .ng--text {
+        background-color: white;
+        color: black;
+    }
+    .ng--choice-box button {
+        background-color: darkred;
+        color: white;
+        border-radius: 1rem;
+    }
+</style>
+
+<div class="ng--choices-wrapper">
+    <div class="ng--choices-author">
+        <span data-bs-injection-key="choices.author"></span>
+    </div>
+    <div class="ng--choices-text">
+        <span data-bs-injection-key="choices.text"></span>
+    </div>
+    <div class="ng--choice-box" data-bs-injection-key="choices.list" data-bs-injection-type="iter.root">
+        <button
+                data-bs-injection-key="$item"
+                data-bs-injection-type="iter.item.mapAttr"
+                data-bs-event-id="choice"
+                data-bs-event-choice-id
+                data-bs-event-choice-variant
+        ></button>
+    </div>
+</div>

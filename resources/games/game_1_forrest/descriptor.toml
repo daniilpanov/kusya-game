@@ -1,0 +1,10 @@
+[templates]
+choices = "choices_template.html"
+dialog = "dialog_template.html"
+scene_title_template = "scene_title_template.html"
+
+
+[scenes]
+[scenes._1]
+directory = "scene1"
+

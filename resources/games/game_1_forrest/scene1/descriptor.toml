@@ -1,0 +1,27 @@
+[backgrounds]
+[background._1]
+src = "bg/bg1.png"
+position = "static"
+
+[background._2]
+src = "bg/bg2.png"
+position = "scroll-x"
+start_scroll_x = "middle"
+
+
+[persons]
+[persons.vi]
+name = "Vi"
+[persons.vi.sprites]
+default = "sprites/vi/def.png"
+smile = "sprites/vi/smile.png"
+
+
+[dialogs]
+title = "Start Scene"
+msg_user_hello = "Hello, user!"
+msg_description = "This is a demo game"
+
+dia_vi_whereiam = { person = "vi", sprite = "default", text = "Where I am??" }
+msg_vi_do1 = "Vi saw around"
+msg_end = "Good bye!"
