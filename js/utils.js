@@ -1,36 +1,28 @@
 class Utils {
     // Асинхронный запрос с обработкой ошибок
     static async fetchJSON(url, options = {}) {
-        try {
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                ...options
-            };
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        };
 
-            if (config.body && typeof config.body === 'object') {
-                config.body = JSON.stringify(config.body);
-            }
+        if (config.body && typeof config.body === 'object')
+            config.body = JSON.stringify(config.body);
 
-            const response = await fetch(url, config);
+        const response = await fetch(url, config);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        if (!response.ok)
+            throw new Error(`Fetch error: HTTP error with status: ${response.status}`);
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (!data.success) {
-                throw new Error(data.error || 'API request failed');
-            }
+        if (!data.success)
+            throw new Error('Fetch error: ' + (data.error || 'API request failed'));
 
-            return data;
-        } catch (error) {
-            console.error('Fetch error:', error);
-            throw error;
-        }
+        return data;
     }
 
     // Загрузка изображения с кэшированием
@@ -92,11 +84,10 @@ class Utils {
 
                 element.style.opacity = progress.toString();
 
-                if (progress < 1) {
+                if (progress < 1)
                     requestAnimationFrame(animate);
-                } else {
+                else
                     resolve();
-                }
             }
 
             requestAnimationFrame(animate);
@@ -115,9 +106,9 @@ class Utils {
 
                 element.style.opacity = (startOpacity * (1 - progress)).toString();
 
-                if (progress < 1) {
+                if (progress < 1)
                     requestAnimationFrame(animate);
-                } else {
+                else {
                     element.style.display = 'none';
                     resolve();
                 }
@@ -142,9 +133,8 @@ class Utils {
 
     // Получение позиции для текущего устройства
     static getPosition(characterData) {
-        if (!characterData || !characterData.position) {
+        if (!characterData || !characterData.position)
             return { x: '50%', y: '50%' };
-        }
 
         return this.isMobile() ?
             characterData.position.mobile || characterData.position.desktop :
@@ -180,9 +170,8 @@ class Utils {
     // Валидация данных
     static validateData(data, requiredFields) {
         for (const field of requiredFields) {
-            if (data[field] === undefined || data[field] === null) {
+            if (data[field] === undefined || data[field] === null)
                 throw new Error(`Missing required field: ${field}`);
-            }
         }
         return true;
     }
@@ -214,9 +203,8 @@ class TextTyper {
                 this.element.innerHTML += char === ' ' ? '&nbsp;' : char;
                 ++index;
                 this.typerProcessId = setTimeout(type, this.speed);
-            } else {
+            } else
                 this.finished = true;
-            }
         }
 
         type();
