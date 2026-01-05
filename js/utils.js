@@ -1,6 +1,6 @@
 class Utils {
     // Асинхронный запрос с обработкой ошибок
-    static async fetchJSON(url, options = {}) {
+    static async fetch(url, options = {}) {
         const config = {
             headers: {
                 'Content-Type': 'application/json',
@@ -17,12 +17,20 @@ class Utils {
         if (!response.ok)
             throw new Error(`Fetch error: HTTP error with status: ${response.status}`);
 
-        const data = await response.json();
+        return response;
+    }
+
+    static async fetchJSON(url, options = {}) {
+        const data = await (await this.fetch(url, options)).json();
 
         if (!data.success)
             throw new Error('Fetch error: ' + (data.error || 'API request failed'));
 
         return data;
+    }
+
+    static async fetchTOML(url, options = {}) {
+        return toml.parse(await (await this.fetch(url, options)).text());
     }
 
     // Загрузка изображения с кэшированием
