@@ -5,6 +5,32 @@ scene_title_template = "scene_title_template.html"
 
 
 [scenes]
-[scenes._1]
-directory = "scene1"
+[scenes.1]
+RU = "1.ru.act"
+[scenes.2]
+RU = "2.ru.act"
 
+
+[backgrounds]
+[background.1]
+src = "bg/bg1.png"
+position = "static"
+
+[background.2]
+src = "bg/bg2.png"
+position = "scroll-x"
+start_scroll_x = "middle"
+
+
+[stats]
+[stats.alive]
+name = "Живость"
+description = "Игрок получает стат Живость каждый раз, когда выживает с первого раза"
+
+
+[persons]
+[persons.vi]
+name = "Vi"
+[persons.vi.sprites]
+default = "sprites/vi/def.png"
+smile = "sprites/vi/smile.png"

@@ -1,0 +1,30 @@
+[0]
+setBackground = 2
+showTitle = "Вторая сцена"
+[1]
+showPhrase = "This is a demo game"
+[2]
+showPhrase(vi.smile) = "А тут красиво"
+[3]
+showChoice(nextDoing) = [ "Отвернуться", "Продолжить смотреть" ]
+[4]
+if(nextDoing.1) = 5
+if(nextDoing.2) = 6
+[5]
+showPhrase = "Вы умерли"
+[6]
+setVar(var.died) = 1
+goto = 2
+[7]
+showPhrase = "Из темноты показался монстр..."
+[8]
+showPhrase(vi.default) = "Ё моё"
+if(died) = 10
+[9]
+addStats(alive) = 1
+[10]
+if(!stat.alive) = 12
+[11]
+showPhrase(vi.smile) = "Я крут!"
+[12]
+end
