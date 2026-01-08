@@ -49,7 +49,7 @@ var toml = (function () {
         function parseNameValue(line) {
             var equal = line.indexOf('=');
             return {
-                name: line.substring(0, equal),
+                name: line.substring(0, equal).trim(),
                 value: line.substring(equal + 1)
             };
         }
@@ -147,7 +147,7 @@ var toml = (function () {
 
     var parse = function (context, lines) {
         mergeMultilines(lines).forEach(function (line) {
-            line = stripComments(replaceWhitespaces(line));
+            line = stripComments(line);
             parseLine(context, line);
         });
 
