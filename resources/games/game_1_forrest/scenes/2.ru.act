@@ -27,4 +27,4 @@ if(!stat.alive) = 12
 [11]
 showPhrase(vi.smile) = "Я крут!"
 [12]
-end
+end =

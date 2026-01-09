@@ -1,5 +1,5 @@
 [0]
-setBackground = "_1"
+setBackground = 1
 showTitle = "Первая сцена"
 [1]
 showPhrase = "This is a demo game"
@@ -10,4 +10,4 @@ showPhrase = "Ви огляделся"
 [4]
 showPhrase = "До свидания!"
 [5]
-gotoNextScene
+gotoNextScene =
