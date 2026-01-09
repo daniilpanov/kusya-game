@@ -13,34 +13,5 @@ services:
     networks:
       - novel-network
 
-  mysql:
-    image: mariadb:latest
-    environment:
-      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
-      MARIADB_USER: "${DB_USER}"
-      MARIADB_PASSWORD: "${DB_PASSWORD}"
-      MARIADB_DATABASE: "${DB_NAME}"
-    volumes:
-      - "mysql_data:/var/lib/mysql:rw"
-      - "./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro"
-    networks:
-      - novel-network
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    environment:
-      PMA_HOST: "mysql"
-      PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
-    ports:
-      - "8081:80"
-    depends_on:
-      - mysql
-    networks:
-      - novel-network
-
-volumes:
-  mysql_data:
-
 networks:
   novel-network:

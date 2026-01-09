@@ -1,6 +1,4 @@
 <?php
-require_once 'db.php';
-
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -9,9 +7,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 try {
-    $db = new Database();
-    $pdo = $db->getConnection();
-
     $requestUri = $_SERVER['REQUEST_URI'];
     $uriParts = explode('/', $requestUri);
     $gameId = null;
@@ -24,20 +19,16 @@ try {
         }
     }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        if ($gameId) {
-            // GET /api/games/{id}/play
-            if (end($uriParts) === 'play')
-                getStartScene($pdo, $gameId);
-            // GET /api/games/{id} - game info
-            else
-                getGameInfo($pdo, $gameId);
-        }
-        // GET /api/games
-        else
-            getGamesList($pdo);
-    }
-    else throw new Exception('Method not allowed', 405);
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET')
+        throw new Exception('Method not allowed', 405);
+
+
+    // GET /api/games/{id}
+    if ($gameId)
+        getStartScene($gameId);
+    // GET /api/games
+    else
+        getGamesList();
 
 } catch (Exception $e) {
     $code = $e->getCode() ?: 400;
@@ -48,21 +39,17 @@ try {
     ]);
 }
 
-function getGamesList($pdo) {
-    $query = "
-        SELECT g.id, g.title, g.start_scene_id,
-               COUNT(DISTINCT s.id) as scene_count,
-               COUNT(DISTINCT d.id) as dialogue_count
-        FROM games g
-        LEFT JOIN scenes s ON g.id = s.game_id
-        LEFT JOIN actions d ON s.id = d.scene_id
-        GROUP BY g.id
-        ORDER BY g.created_at DESC
-    ";
+function getGamesList() {
+    // dir_name, info
+    $rootGamesDirectory = 'resources/games/';
+    $gameIds = scandir($rootGamesDirectory);
+    $games = [];
+    foreach ($gameIds as $gameId) {
+        if ($gameId === '.' || $gameId === '..')
+            continue;
 
-    $stmt = $pdo->prepare($query);
-    $stmt->execute();
-    $games = $stmt->fetchAll();
+        $games[$rootGamesDirectory . $gameId] = [];
+    }
 
     echo json_encode([
         'success' => true,
@@ -70,34 +57,7 @@ function getGamesList($pdo) {
     ]);
 }
 
-function getGameInfo($pdo, $gameId) {
-    $query = "
-        SELECT g.*,
-               COUNT(DISTINCT s.id) as scene_count,
-               COUNT(DISTINCT d.id) as dialogue_count
-        FROM games g
-        LEFT JOIN scenes s ON g.id = s.game_id
-        LEFT JOIN actions d ON s.id = d.scene_id
-        WHERE g.id = :game_id
-        GROUP BY g.id
-    ";
-
-    $stmt = $pdo->prepare($query);
-    $stmt->bindValue(':game_id', $gameId, PDO::PARAM_INT);
-    $stmt->execute();
-    $game = $stmt->fetch();
-
-    if (!$game) {
-        throw new Exception('Game not found', 404);
-    }
-
-    echo json_encode([
-        'success' => true,
-        'game' => $game
-    ]);
-}
-
-function getStartScene($pdo, $gameId) {
+function getStartScene($gameId) {
     $query = "
         SELECT g.start_scene_id
         FROM games g
