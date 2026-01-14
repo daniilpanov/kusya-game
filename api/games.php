@@ -33,7 +33,6 @@ try {
 }
 
 function getGamesList() {
-    // dir_name, info
     $rootGamesUri = '/resources/games/';
     $rootGamesPath = '..' . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'games' . DIRECTORY_SEPARATOR;
     $gameIds = scandir($rootGamesPath);
@@ -51,6 +50,6 @@ function getGamesList() {
 
     echo json_encode([
         'success' => true,
-        'games' => $games
+        'games' => $games,
     ]);
 }
