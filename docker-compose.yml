@@ -8,8 +8,6 @@ services:
     volumes:
       - "./:/var/www/html:ro"
       - "./apache/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro"
-    depends_on:
-      - mysql
     networks:
       - novel-network
 
