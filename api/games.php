@@ -41,14 +41,19 @@ try {
 
 function getGamesList() {
     // dir_name, info
-    $rootGamesDirectory = 'resources/games/';
-    $gameIds = scandir($rootGamesDirectory);
+    $rootGamesUri = '/resources/games/';
+    $rootGamesPath = '..' . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'games' . DIRECTORY_SEPARATOR;
+    $gameIds = scandir($rootGamesPath);
     $games = [];
     foreach ($gameIds as $gameId) {
         if ($gameId === '.' || $gameId === '..')
             continue;
 
-        $games[$rootGamesDirectory . $gameId] = [];
+        $infoFilename = $rootGamesPath . $gameId . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'info.json';
+
+        if (file_exists($infoFilename))
+            $games[$rootGamesUri . $gameId] = json_decode(file_get_contents($infoFilename), true)
+                    + ['descriptor' => $rootGamesUri . $gameId . '/config/descriptor.toml'];
     }
 
     echo json_encode([
