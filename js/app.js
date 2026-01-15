@@ -1,4 +1,6 @@
 class NovelPlatformApp {
+    lang = "RU";
+
     constructor() {
         this.games = [];
         this.isLoading = false;
@@ -53,19 +55,16 @@ class NovelPlatformApp {
             return;
         }
 
-        gamesGrid.innerHTML = this.games.map(game => `
-            <div class="game-card" data-game-id="${game.id}">
+        gamesGrid.innerHTML = this.games.filter(game => game.langs.indexOf(this.lang) > -1).map(game => `
+            <div class="game-card" data-game-id="${game.resource}">
                 <div class="game-image">
-                    <div class="game-image-placeholder">📖</div>
-                    ${game.cover_image ? `<img src="assets/covers/${game.cover_image}" alt="${Utils.escapeHtml(game.title)}" style="display: none;">` : ''}
+                    ${game.cover_image
+                        ? `<img src="assets/covers/${game.cover_image}" alt="📖">`
+                        : '<div class="game-image-placeholder">📖</div>'}
                 </div>
                 <div class="game-info">
-                    <h3>${Utils.escapeHtml(game.title)}</h3>
-                    <div class="game-stats">
-                        <span class="stat">Сцен: ${game.scene_count || 0}</span>
-                        <span class="stat">Диалогов: ${game.dialogue_count || 0}</span>
-                    </div>
-                    <p class="game-description">${Utils.escapeHtml(game.description || 'Интерактивная визуальная новелла')}</p>
+                    <h3>${Utils.escapeHtml(game[this.lang].name)}</h3>
+                    <p class="game-description">${Utils.escapeHtml(game[this.lang].description || '')}</p>
                 </div>
             </div>
         `).join('');
