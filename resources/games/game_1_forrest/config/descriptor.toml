@@ -12,11 +12,11 @@ RU = "2.ru.act"
 
 
 [backgrounds]
-[background.1]
+[backgrounds.1]
 src = "bg/bg1.png"
 position = "static"
 
-[background.2]
+[backgrounds.2]
 src = "bg/bg2.png"
 position = "scroll-x"
 start_scroll_x = "middle"
