@@ -9,7 +9,6 @@ class NovelPlatformApp {
 
     async init() {
         try {
-            await this.setupEventListeners();
             await this.loadGames();
             this.renderGames();
         } catch (error) {
@@ -192,38 +191,6 @@ class NovelPlatformApp {
                     errorElement.parentNode.removeChild(errorElement);
             }, 300);
         }
-    }
-
-    setupEventListeners() {
-        return new Promise((resolve) => {
-            // Закрытие модального окна по клику вне контента
-            document.addEventListener('click', async e => {
-                if (e.target.classList.contains('modal'))
-                    await this.hideModal('gameModal');
-            });
-
-            // Закрытие модального окна по крестику
-            const closeBtn = document.querySelector('.modal .close');
-            if (closeBtn)
-                closeBtn.addEventListener('click', async () =>
-                    await this.hideModal('gameModal'));
-
-            // Закрытие по ESC
-            document.addEventListener('keydown', async e => {
-                if (e.key === 'Escape')
-                    await this.hideModal('gameModal');
-            });
-
-            // Обновление по F5
-            document.addEventListener('keydown', async e => {
-                if (e.key === 'F5') {
-                    e.preventDefault();
-                    await this.loadGames();
-                }
-            });
-
-            resolve();
-        });
     }
 }
 
