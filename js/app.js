@@ -3,6 +3,7 @@ class NovelPlatformApp {
 
     constructor() {
         this.games = [];
+        this.mappedGames = {};
         this.isLoading = false;
     }
 
@@ -55,19 +56,26 @@ class NovelPlatformApp {
             return;
         }
 
-        gamesGrid.innerHTML = this.games.filter(game => game.langs.indexOf(this.lang) > -1).map(game => `
-            <div class="game-card" data-game-id="${game.resource}">
-                <div class="game-image">
-                    ${game.cover_image
-                        ? `<img src="assets/covers/${game.cover_image}" alt="📖">`
-                        : '<div class="game-image-placeholder">📖</div>'}
+        gamesGrid.innerHTML = this.games.filter(game => game.langs.indexOf(this.lang) > -1).map(game => {
+            this.mappedGames[game.resource] = game;
+            return `
+                <div class="game-card" data-game-id="${game.resource}">
+                    <div class="game-image">
+                        ${game.cover_image
+                            ? `<img src="assets/covers/${game.cover_image}" alt="📖">`
+                            : '<div class="game-image-placeholder">📖</div>'}
+                    </div>
+                    <div class="game-info">
+                        <h3>${Utils.escapeHtml(game[this.lang].name)}</h3>
+                        <p class="game-description">${Utils.escapeHtml(game[this.lang].description || '')}</p>
+                    </div>
+                    <button class="act-start-game btn btn-primary">
+                        <span class="btn-icon">🎮</span>
+                        Начать игру
+                    </button>
                 </div>
-                <div class="game-info">
-                    <h3>${Utils.escapeHtml(game[this.lang].name)}</h3>
-                    <p class="game-description">${Utils.escapeHtml(game[this.lang].description || '')}</p>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Добавляем обработчики событий
         this.attachGameCardListeners();
@@ -75,82 +83,21 @@ class NovelPlatformApp {
 
     attachGameCardListeners() {
         document.querySelectorAll('.game-card').forEach(card => {
-            card.addEventListener('click', async e => {
-                if (e.target.closest('.game-card')) {
-                    const gameId = parseInt(card.getAttribute('data-game-id'));
-                    await this.showGameModal(gameId);
-                }
-            });
-
             // Эффекты при наведении
             card.addEventListener('mouseenter', () =>
                 card.style.transform = 'translateY(-5px)');
-
             card.addEventListener('mouseleave', () =>
                 card.style.transform = 'translateY(0)');
+
+            const gameResource = card.getAttribute('data-game-id');
+            const [ playBtn ] = card.getElementsByClassName('act-start-game');
+            if (playBtn && gameResource) {
+                playBtn.addEventListener('click', async e => {
+                    if (e.target.closest('.game-card'))
+                        await this.startGame(gameResource);
+                });
+            }
         });
-    }
-
-    async showGameModal(gameId) {
-        const game = this.games.find(g => g.id === gameId);
-        if (!game) return;
-
-        try {
-            // Загружаем детальную информацию об игре
-            const gameDetail = await Utils.fetchJSON(`/api/games/${gameId}`);
-
-            const modalContent = document.getElementById('modalContent');
-            modalContent.innerHTML = `
-                <div class="modal-header">
-                    <h2>${Utils.escapeHtml(gameDetail.game.title)}</h2>
-                </div>
-                <div class="modal-body">
-                    <div class="modal-game-image">
-                        <div class="game-image-large">📖</div>
-                    </div>
-                    <div class="game-details">
-                        <div class="detail-item">
-                            <strong>Начальная сцена:</strong> 
-                            <span>${Utils.escapeHtml(gameDetail.game.start_scene_id)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <strong>Количество сцен:</strong> 
-                            <span>${gameDetail.game.scene_count || 0}</span>
-                        </div>
-                        <div class="detail-item">
-                            <strong>Диалогов:</strong> 
-                            <span>${gameDetail.game.dialogue_count || 0}</span>
-                        </div>
-                        ${gameDetail.game.description ? `
-                        <div class="detail-item full-width">
-                            <strong>Описание:</strong> 
-                            <p>${Utils.escapeHtml(gameDetail.game.description)}</p>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button id="playBtn" class="btn btn-primary">
-                        <span class="btn-icon">🎮</span>
-                        Начать игру
-                    </button>
-                    <button id="closeModalBtn" class="btn btn-secondary">Закрыть</button>
-                </div>
-            `;
-
-            await this.showModal('gameModal');
-
-            // Обработчики событий модального окна
-            document.getElementById('playBtn').addEventListener('click', () =>
-                this.startGame(gameDetail.game));
-
-            document.getElementById('closeModalBtn').addEventListener('click', () =>
-                this.hideModal('gameModal'));
-
-        } catch (error) {
-            console.error('Error loading game details:', error);
-            this.showError('Не удалось загрузить информацию об игре');
-        }
     }
 
     async startGame(game) {
@@ -176,24 +123,6 @@ class NovelPlatformApp {
             this.showError('Не удалось начать игру');
             this.showLoading(false);
         }
-    }
-
-    async showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        await Utils.fadeIn(modal);
-    }
-
-    async hideModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        await Utils.fadeOut(modal);
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
     }
 
     showLoading(show, message = 'Загрузка...') {
