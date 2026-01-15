@@ -192,10 +192,10 @@ class TextTyper {
     typerProcessId = undefined;
     finished = false;
 
-    constructor(element, text, speed) {
+    constructor(element, text, delay) {
         this.element = element;
         this.text = text;
-        this.speed = speed;
+        this.delay = delay;
     }
 
     startTyping() {
@@ -210,7 +210,7 @@ class TextTyper {
                 const char = this.text.charAt(index);
                 this.element.innerHTML += char === ' ' ? '&nbsp;' : char;
                 ++index;
-                this.typerProcessId = setTimeout(type, this.speed);
+                this.typerProcessId = setTimeout(type, this.delay);
             } else
                 this.finished = true;
         }
