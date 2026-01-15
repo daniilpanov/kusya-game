@@ -99,27 +99,23 @@ class NovelPlatformApp {
         });
     }
 
-    async startGame(game) {
+    async startGame(gameResource) {
         this.showLoading(true, 'Запуск игры...');
 
         try {
-            const data = await Utils.fetchJSON(`/api/games/${game.id}/play`);
-
-            if (data.success) {
-                // Формируем URL для перехода на страницу игры
-                const params = new URLSearchParams({
-                    game_id: game.id,
-                    scene_id: data.scene.scene_id
-                });
-
-                if (data.first_dialogue_id)
-                    params.append('first_dialogue_id', data.first_dialogue_id);
-
-                window.location.href = `game.html?${params.toString()}`;
+            const game = this.mappedGames[gameResource];
+            if (!game.descriptor) {
+                console.error(`Error starting game ${gameResource}: no descriptor found!`);
+                this.showError('Не удалось начать игру');
+                return;
             }
-        } catch (error) {
-            console.error('Error starting game:', error);
-            this.showError('Не удалось начать игру');
+
+            const params = new URLSearchParams({
+                game_descriptor_uri: game.descriptor,
+            });
+
+            window.location.href = `game.html?${params.toString()}`;
+        } finally {
             this.showLoading(false);
         }
     }
