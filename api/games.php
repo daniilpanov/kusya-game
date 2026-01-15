@@ -44,8 +44,8 @@ function getGamesList() {
         $infoFilename = $rootGamesPath . $gameId . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'info.json';
 
         if (file_exists($infoFilename))
-            $games[$rootGamesUri . $gameId] = json_decode(file_get_contents($infoFilename), true)
-                    + ['descriptor' => $rootGamesUri . $gameId . '/config/descriptor.toml'];
+            $games[] = json_decode(file_get_contents($infoFilename), true)
+                    + ['resource' => $rootGamesUri . $gameId, 'descriptor' => $rootGamesUri . $gameId . '/config/descriptor.toml'];
     }
 
     echo json_encode([
