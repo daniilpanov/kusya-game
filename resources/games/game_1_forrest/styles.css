@@ -1,0 +1,13 @@
+.ng--author, .ng--title {
+    background-color: darkred;
+    color: white;
+}
+.ng--text {
+    background-color: white;
+    color: black;
+}
+.ng--choice-box button {
+    background-color: darkred;
+    color: white;
+    border-radius: 1rem;
+}

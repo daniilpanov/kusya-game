@@ -80,7 +80,9 @@
 
     const game = new Game(gameResource, gameDescriptorUri);
     window.game = game;
-    game.init().then(() => game.start());
+    game.init()
+        .then(({ headInjections }) => headInjections.map(item => document.head.appendChild(item)))
+        .then(() => game.start());
 </script>
 </body>
 </html>
