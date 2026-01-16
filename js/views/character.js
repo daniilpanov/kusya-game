@@ -1,42 +1,57 @@
 class CharacterView {
-    x = undefined;
-    y = undefined;
-    sprite = undefined;
-    charactersContainer = document.getElementById('charactersContainer');
+    x = 0.5;  // 0 - left, 1 - right
+    y = 0.5;  // 0 - bottom, 1 - top
+    currentSprite = undefined;
 
-    constructor(characterName) {
-        this.name = characterName;
+    constructor(name, spritesMap) {
+        this.name = name;
+        this.spritesMap = spritesMap;
     }
 
     setAnchorPosition(x, y) {
         this.x = x;
         this.y = y;
+        this.updatePosition();
     }
 
-    async loadSprite(src) {
-        this.sprite = new Image();
-        this.sprite.style.position = 'absolute';
+    show(spriteName = "default") {
+        if (this.currentSprite)
+            this.hide();
 
-        await new Promise((resolve, reject) => {
-            this.sprite.onload = resolve;
-            this.sprite.onerror = reject;
-            this.sprite.alt = "sprite";
-            this.sprite.src = `/assets/sprites/${src}`;
-        });
+        this.spritesMap[spriteName].classList.remove("hidden");
+        this.currentSprite = spriteName;
 
-        this.charactersContainer.appendChild(this.sprite);
-    }
-
-    show() {
-        this.sprite.style.opacity = '1';
+        this.updatePosition();
     }
 
     hide() {
-        this.sprite.style.opacity = '0';
+        if (this.currentSprite)
+            this.spritesMap[this.currentSprite].classList.add("hidden");
     }
 
-    render() {
-        this.sprite.style.left = `${window.innerWidth * this.x}`;
-        this.sprite.style.top = `${window.innerHeight * this.y}`;
+    updatePosition() {
+        const sprite = this.spritesMap[this.currentSprite];
+
+        if (Math.abs(this.x - 0.5) < 0.01) {
+            sprite.style.left = "0px";
+            sprite.style.right = "0px";
+        } else if (this.x > 0.5) {
+            sprite.style.left = `${window.innerWidth * this.x}px`;
+            sprite.style.right = "";
+        } else {
+            sprite.style.left = "";
+            sprite.style.right = `${window.innerWidth * (1 - this.x)}px`;
+        }
+
+        if (Math.abs(this.y - 0.5) < 0.01) {
+            sprite.style.top = "0px";
+            sprite.style.bottom = "0px";
+        } else if (this.y > 0.5) {
+            sprite.style.top = "";
+            sprite.style.bottom = `${window.innerHeight * this.y}px`;
+        } else {
+            sprite.style.bottom = "";
+            sprite.style.top = `${window.innerHeight * (1 - this.y)}px`;
+        }
     }
 }

@@ -81,7 +81,15 @@
     const game = new Game(gameResource, gameDescriptorUri);
     window.game = game;
     game.init()
-        .then(({ headInjections }) => headInjections.map(item => document.head.appendChild(item)))
+        .then(({ headInjections, spriteImages }) => {
+            headInjections.map(item => document.head.appendChild(item));
+
+            const charactersContainer = document.getElementById('charactersContainer');
+            spriteImages.map(img => {
+                img.classList.add("character", "hidden");
+                charactersContainer.appendChild(img);
+            });
+        })
         .then(() => game.start());
 </script>
 </body>
