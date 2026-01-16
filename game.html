@@ -72,14 +72,15 @@
 
     const params = Utils.getUrlParams();
 
-    const gameId = params.get('game_id');
-    const currentSceneId = params.get('scene_id');
+    const gameResource = params.get('game_resource');
+    const gameDescriptorUri = params.get('game_descriptor_uri');
 
-    if (!gameId || !currentSceneId)
-        throw new Error('Missing required game parameters');
+    if (!gameResource || !gameDescriptorUri)
+        throw new Error('Missing required gameDescriptorUri');
 
-    const game = new Game();
-    game.initScene(new SceneAPI(currentSceneId)).then(() => game.start());
+    const game = new Game(gameResource, gameDescriptorUri);
+    window.game = game;
+    game.init().then(() => game.start());
 </script>
 </body>
 </html>

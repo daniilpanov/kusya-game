@@ -111,6 +111,7 @@ class NovelPlatformApp {
             }
 
             const params = new URLSearchParams({
+                game_resource: gameResource,
                 game_descriptor_uri: game.descriptor,
             });
 
