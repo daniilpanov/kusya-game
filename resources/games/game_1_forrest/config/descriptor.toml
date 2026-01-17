@@ -7,9 +7,9 @@ scene_title_template = "scene_title_template.html"
 
 [scenes]
 [scenes.1]
-RU = "1.ru.act"
+RU = "scenes/1.ru.act"
 [scenes.2]
-RU = "2.ru.act"
+RU = "scenes/2.ru.act"
 
 
 [backgrounds]
