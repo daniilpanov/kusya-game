@@ -8,13 +8,16 @@ class CustomAction {
 
 class Game {
     lang = "RU";
+
+    sortedSceneKeys = undefined;
+    sceneDescriptors = undefined;
+    currentSceneKeyIndex = undefined;
     sceneView = undefined;
 
     stats = undefined;
     persons = undefined;
     templates = undefined;
     backgrounds = undefined;
-    sceneDescriptors = undefined;
 
     constructor(gameResource, descriptorUri) {
         this.gameResource = gameResource;
@@ -32,13 +35,6 @@ class Game {
                 stats[statsKey].value = 0;
         }
         this.stats = stats;
-
-        // Load scenes
-        const scenes = {};
-        for (const scenesKey in descriptor.scenes)
-            scenes[scenesKey] = descriptor.scenes[scenesKey][this.lang];
-
-        this.sceneDescriptors = scenes;
 
         // Load templates and its styles
         const templates = {};
@@ -103,17 +99,27 @@ class Game {
         }
 
         this.persons = persons;
+
+        // Load scenes
+        const scenes = {};
+        for (const scenesKey in descriptor.scenes)
+            scenes[scenesKey] = descriptor.scenes[scenesKey][this.lang];
+
+        this.sceneDescriptors = scenes;
+        this.sortedSceneKeys = Object.keys(scenes).sort();
+
+        await this.loadScene(0);
         return { headInjections, spriteImages };
 
         // document.getElementById('dialogueContainer').onclick = () => this.nextAction();
+    }
 
-        this.sceneView = new SceneView(characters);
-        try {
-            await this.sceneView.setupBackground(scene.background);
-        } catch (e) {
-        }
-
-        await this.loadActions(await sceneAPI.getActions());
+    async loadScene(keyIndex) {
+        this.currentSceneKeyIndex = keyIndex;
+        this.sceneView = new SceneView(
+            await fetch(this.gameResource + "/" + this.sceneDescriptors[this.sortedSceneKeys[keyIndex]])
+                .then(res => res.text())
+        );
     }
 
     async start() {
