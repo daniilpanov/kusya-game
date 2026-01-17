@@ -26,7 +26,12 @@ class Game {
         const descriptor = await Utils.fetchTOML(this.descriptorUri);
 
         // Load stats
-        this.stats = descriptor.stats;
+        const stats = descriptor.stats;
+        for (const statsKey in stats) {
+            if (typeof stats[statsKey].value === "undefined")
+                stats[statsKey].value = 0;
+        }
+        this.stats = stats;
 
         // Load scenes
         const scenes = {};
