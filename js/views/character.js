@@ -35,7 +35,7 @@ class CharacterView {
         if (Math.abs(this.x - 0.5) < 0.01) {
             sprite.style.left = "0px";
             sprite.style.right = "0px";
-        } else if (this.x > 0.5) {
+        } else if (this.x < 0.5) {
             sprite.style.left = `${window.innerWidth * this.x}px`;
             sprite.style.right = "";
         } else {
@@ -46,7 +46,7 @@ class CharacterView {
         if (Math.abs(this.y - 0.5) < 0.01) {
             sprite.style.top = "0px";
             sprite.style.bottom = "0px";
-        } else if (this.y > 0.5) {
+        } else if (this.y < 0.5) {
             sprite.style.top = "";
             sprite.style.bottom = `${window.innerHeight * this.y}px`;
         } else {
