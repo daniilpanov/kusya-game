@@ -98,21 +98,9 @@ class Game {
         }
 
         this.persons = persons;
-        console.log(this);
         return { headInjections, spriteImages };
 
-        document.getElementById('dialogueContainer').onclick = () => this.nextAction();
-
-        const characters = [];
-        for (const character of scene.initial_characters) {
-            const charObj = new CharacterView(character.id);
-            characters.push(charObj);
-            charObj.setAnchorPosition(character.x, character.y);
-            try {
-                await charObj.loadSprite(character.sprite);
-            } catch (e) {
-            }
-        }
+        // document.getElementById('dialogueContainer').onclick = () => this.nextAction();
 
         this.sceneView = new SceneView(characters);
         try {
