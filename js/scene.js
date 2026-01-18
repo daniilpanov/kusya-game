@@ -18,6 +18,11 @@ class SceneController {
         this.currentActionsGroupKeyIndex = keyIdx;
         this.groups[this.groupsKeys[keyIdx]].map(this.actionsHandler);
     }
+
+    doActionsGroupByKey(key) {
+        this.currentActionsGroupKeyIndex = this.groupsKeys.indexOf(key);
+        this.groups[key].map(this.actionsHandler);
+    }
 }
 
 const parseGroup = group => Object.keys(group).map(key => parseAction(key, group[key]));

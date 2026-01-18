@@ -1,10 +1,40 @@
+const handlersMap = {
+    action_setBackground: function (bgKey) {
+        bgKey = String(bgKey);
 
-class CustomAction {
-    constructor(doAction, finishAction = undefined) {
-        this.doAction = doAction;
-        this.finishAction = finishAction || (async () => {});
-    }
-}
+    },
+    action_if: function (groupKey, [ condition ]) {
+        if (this.expressionsParser.evaluate(condition))
+            handlersMap.action_goto(groupKey);
+    },
+    action_setVar: function (value, [ varName ]) {
+        this.variables[varName] = value;
+    },
+    action_addStats: function (value, [ statName ]) {
+        this.stats[statName] += value;
+    },
+    action_goto: function (groupKey) {
+        this.sceneController.doActionsGroupByKey(String(groupKey));
+    },
+    action_showChoice: function (variants, choiceKey) {
+
+    },
+    action_showPhrase: function (phrase, [ character, pseudoName ]) {
+
+    },
+    action_showTitle: function (title) {
+
+    },
+    action_gotoNextScene: function () {
+        return this.loadSceneByKeyIndex(this.currentSceneKeyIndex + 1);
+    },
+    action_gotoScene: function (sceneKey) {
+        return this.loadSceneByKey(sceneKey);
+    },
+    action_end: function () {
+
+    },
+};
 
 class Game {
     lang = "RU";
@@ -12,7 +42,7 @@ class Game {
     sortedSceneKeys = undefined;
     sceneDescriptors = undefined;
     currentSceneKeyIndex = undefined;
-    sceneView = undefined;
+    sceneController = undefined;
 
     stats = undefined;
     persons = undefined;
@@ -22,6 +52,8 @@ class Game {
     constructor(gameResource, descriptorUri) {
         this.gameResource = gameResource;
         this.descriptorUri = descriptorUri;
+        this.variables = {};
+        this.expressionsParser = new ExpressionsParser(varName => this.variables[varName]);
     }
 
     async init() {
@@ -108,55 +140,36 @@ class Game {
         this.sceneDescriptors = scenes;
         this.sortedSceneKeys = Object.keys(scenes).sort();
 
-        await this.loadScene(0);
+        await this.loadSceneByKeyIndex(0);
         return { headInjections, spriteImages };
 
         // document.getElementById('dialogueContainer').onclick = () => this.nextAction();
     }
 
-    async loadScene(keyIndex) {
+    loadSceneByKeyIndex(keyIndex) {
         this.currentSceneKeyIndex = keyIndex;
-        this.sceneView = new SceneView(
-            await fetch(this.gameResource + "/" + this.sceneDescriptors[this.sortedSceneKeys[keyIndex]])
-                .then(res => res.text())
+        return this._loadScene(this.sortedSceneKeys[keyIndex]);
+    }
+
+    loadSceneByKey(key) {
+        this.currentSceneKeyIndex = this.sortedSceneKeys.indexOf(key);
+        return this._loadScene(key);
+    }
+
+    async _loadScene(key) {
+        this.sceneController = new SceneController(
+            key,
+            await fetch(this.gameResource + "/" + this.sceneDescriptors[key])
+                .then(res => res.text()),
+            this.handleAction.bind(this),
         );
     }
 
-    async start() {
-        await this.sceneView.nextAction();
-        this.sceneView.render();
+    handleAction({ actionKey, mainArg, args }) {
+        handlersMap[`action_${actionKey}`](mainArg, args).bind(this);
     }
 
-    async loadActions({ actions, choice }) {
-        const parsedActions = [];
-        for (const action of actions) {
-            for (const subaction of action.action) {
-                switch (subaction.action) {
-                    case "end":
-                        parsedActions.push(new CustomAction(() => window.location.href = 'index.html'));
-                        break;
-                    case "dialog":
-                        parsedActions.push(new DialogAction(subaction.body.text, subaction.body.character_id));
-                        break;
-                    case "background":
-                        parsedActions.push(new CustomAction(async () => await this.sceneView.setupBackground(subaction.body.src)));
-                        break;
-                }
-            }
-        }
-
-        if (choice)
-            parsedActions.push(new ChoiceAction(this, choice));
-
-        this.sceneView.loadActions(parsedActions);
-    }
-
-    async nextAction() {
-        await this.sceneView.nextAction();
-        this.sceneView.render();
-    }
-
-    async choose(choiceAlias) {
-        await this.loadActions(await this.sceneAPI.getActions(choiceAlias));
+    start() {
+        this.sceneController.doNextActionsGroup();
     }
 }
