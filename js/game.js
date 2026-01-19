@@ -1,37 +1,37 @@
 const handlersMap = {
-    action_setBackground: function (bgKey) {
+    action_setBackground(bgKey) {
         bgKey = String(bgKey);
 
     },
-    action_if: function (groupKey, [ condition ]) {
+    action_if(groupKey, [ condition ]) {
         if (this.expressionsParser.evaluate(condition))
             handlersMap.action_goto(groupKey);
     },
-    action_setVar: function (value, [ varName ]) {
+    action_setVar(value, [ varName ]) {
         this.variables[varName] = value;
     },
-    action_addStats: function (value, [ statName ]) {
+    action_addStats(value, [ statName ]) {
         this.stats[statName] += value;
     },
-    action_goto: function (groupKey) {
+    action_goto(groupKey) {
         this.sceneController.doActionsGroupByKey(String(groupKey));
     },
-    action_showChoice: function (variants, choiceKey) {
+    action_showChoice(variants, choiceKey) {
 
     },
-    action_showPhrase: function (phrase, [ character, pseudoName ]) {
+    action_showPhrase(phrase, [ character, pseudoName ]) {
 
     },
-    action_showTitle: function (title) {
+    action_showTitle(title) {
 
     },
-    action_gotoNextScene: function () {
+    action_gotoNextScene() {
         return this.loadSceneByKeyIndex(this.currentSceneKeyIndex + 1);
     },
-    action_gotoScene: function (sceneKey) {
+    action_gotoScene(sceneKey) {
         return this.loadSceneByKey(sceneKey);
     },
-    action_end: function () {
+    action_end() {
 
     },
 };
