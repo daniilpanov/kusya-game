@@ -1,0 +1,74 @@
+const injectionHandlers = {
+    insertion(text, element) {
+        element.innerHTML = text;
+    },
+    iter_mapFullItemToAttrs(data, { rootEl, template }) {
+        rootEl.innerHTML = "";
+
+        for (const item of data) {
+            const templateInstance = template.cloneNode(true);
+            const innerText = data.content || data.text;
+
+            if (innerText) {
+                templateInstance.innerHTML = innerText;
+                delete data.content;
+                delete data.text;
+            }
+
+            for (const itemKey in item)
+                templateInstance.setAttribute(`data-bs-${itemKey}`, item[itemKey]);
+
+            rootEl.appendChild(templateInstance);
+        }
+
+        return rootEl;
+    },
+};
+const injectionPreHandlers = {
+    iter_mapFullItemToAttrs(rootEl) {
+        const template = rootEl.children[0]?.cloneNode(true);
+        if (!template)
+            return;
+
+        rootEl.innerHTML = "";
+        return { rootEl, template };
+    },
+};
+
+class Templater {
+    constructor(templateBody) {
+        this.template = templateBody;
+
+        this.parsedMutableElements = [];
+        const mutableElements = templateBody.querySelectorAll("[data-bs-injection-key]");
+
+        for (const element of mutableElements) {
+            const injectionKey = element.getAttribute("data-bs-injection-key");
+            if (!injectionKey)
+                continue;
+
+            const injectionType = element.getAttribute("data-bs-injection-type") || "insertion";
+            const injectionCallback = injectionHandlers[injectionType];
+
+            if (injectionCallback) {
+                let arg = element;
+                const injectionPreHandler = injectionPreHandlers[injectionType];
+
+                if (injectionPreHandler) {
+                    arg = injectionPreHandler(arg);
+                    if (!arg)
+                        continue;
+                }
+
+                this.parsedMutableElements.push({ arg, injectionKey, injectionCallback });
+            }
+        }
+    }
+
+    render(data) {
+        for (const { arg, injectionKey, injectionCallback } of this.parsedMutableElements)
+            injectionCallback(data[injectionKey], arg);
+
+        return this.template;
+    }
+}
