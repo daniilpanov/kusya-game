@@ -2,7 +2,7 @@
 styles = "styles.css"
 choices = "choices_template.html"
 dialog = "dialog_template.html"
-scene_title_template = "scene_title_template.html"
+sceneTitle = "scene_title_template.html"
 
 
 [scenes]
