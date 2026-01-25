@@ -36,6 +36,9 @@ const injectionPreHandlers = {
 };
 
 class Templater {
+    static injectionHandlers = injectionHandlers;
+    static injectionPreHandlers = injectionPreHandlers;
+
     constructor(templateBody) {
         this.template = templateBody;
 
@@ -48,11 +51,11 @@ class Templater {
                 continue;
 
             const injectionType = element.getAttribute("data-bs-injection-type") || "insertion";
-            const injectionCallback = injectionHandlers[injectionType];
+            const injectionCallback = this.constructor.injectionHandlers[injectionType];
 
             if (injectionCallback) {
                 let arg = element;
-                const injectionPreHandler = injectionPreHandlers[injectionType];
+                const injectionPreHandler = this.constructor.injectionPreHandlers[injectionType];
 
                 if (injectionPreHandler) {
                     arg = injectionPreHandler(arg);
