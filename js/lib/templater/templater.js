@@ -10,7 +10,7 @@ const injectionHandlers = {
             const innerText = item.content || item.text;
 
             if (innerText) {
-                templateInstance.innerHTML = innerText;
+                this.constructor.injectionHandlers.insertion(innerText, templateInstance);
                 delete item.content;
                 delete item.text;
             }
@@ -70,7 +70,7 @@ class Templater {
 
     render(data) {
         for (const { arg, injectionKey, injectionCallback } of this.parsedMutableElements)
-            injectionCallback(data[injectionKey], arg);
+            injectionCallback.bind(this)(data[injectionKey], arg);
 
         return this.template;
     }
