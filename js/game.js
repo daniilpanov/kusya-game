@@ -74,12 +74,13 @@ class Game {
         const parser = new DOMParser();
 
         for (const templateName in descriptor.templates) {
+            const templatePath = descriptor.templates[templateName];
             const res = parser.parseFromString(
-                await fetch(this.gameResource + "/" + descriptor.templates[templateName]).then(r => r.text()),
+                await fetch(this.gameResource + "/" + templatePath).then(r => r.text()),
                 "text/html",
             );
 
-            if (templateName.startsWith("styles")) {
+            if (templatePath.endsWith(".css")) {
                 const styleEl = document.createElement("style");
                 styleEl.innerHTML = res.body.innerHTML;
                 headInjections.push(styleEl);
