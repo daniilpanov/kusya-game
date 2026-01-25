@@ -86,10 +86,10 @@
     window.game = game;
     game.init()
         .then(({ headInjections, spriteImages }) => {
-            headInjections.map(item => document.head.appendChild(item));
+            headInjections.forEach(item => document.head.appendChild(item));
 
             const charactersContainer = document.getElementById('charactersContainer');
-            spriteImages.map(img => {
+            spriteImages.forEach(img => {
                 img.classList.add("character", "hidden");
                 charactersContainer.appendChild(img);
             });
