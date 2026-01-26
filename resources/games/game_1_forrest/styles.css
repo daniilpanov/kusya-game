@@ -1,6 +1,16 @@
-.ng--author, .ng--title {
+.ng--author {
     background-color: darkred;
     color: white;
+}
+.ng--title {
+    width: 100dvw;
+    height: 100dvh;
+    display: grid;
+    align-content: center;
+    justify-content: center;
+    color: aqua;
+    font-size: xxx-large;
+    font-family: "Comic Sans MS", "Comic Sans", cursive;
 }
 .ng--text {
     background-color: white;
