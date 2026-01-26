@@ -9,6 +9,7 @@ showPhrase(vi.smile) = "А тут красиво"
 showChoice(nextDoing, vi.smile) = [ "Что Ви сделал дальше?", "Отвернулся", "Продолжил смотреть" ]
 [4]
 if(nextDoing == "Отвернулся") = 7
+if(nextDoing == "Продолжил смотреть") = 5
 [5]
 showPhrase = "Вы умерли"
 [6]
