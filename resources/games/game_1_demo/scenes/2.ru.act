@@ -13,7 +13,7 @@ if(nextDoing == "Продолжил смотреть") = 5
 [5]
 showPhrase = "Вы умерли"
 [6]
-setVar(var.died) = 1
+setVar(died) = 1
 goto = 2
 [7]
 showPhrase = "Из темноты показался монстр..."
