@@ -69,7 +69,7 @@ class ExpressionsParser {
             }
 
             // Числа
-            if (/[-0-9.]/.test(char)) {
+            if (/[-0-9]/.test(char)) {
                 let value = '';
                 while (i < condition.length && /[-0-9.]/.test(condition[i])) {
                     value += condition[i];
@@ -82,7 +82,7 @@ class ExpressionsParser {
             // Идентификаторы (переменные)
             if (/[a-zA-Z_$]/.test(char)) {
                 let value = '';
-                while (i < condition.length && /[a-zA-Z0-9_$]/.test(condition[i])) {
+                while (i < condition.length && /[a-zA-Z0-9_.$]/.test(condition[i])) {
                     value += condition[i];
                     i++;
                 }
