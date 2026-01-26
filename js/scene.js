@@ -6,7 +6,7 @@ class SceneController {
         this.actionsHandler = actionsHandler;
 
         const descriptorObject = toml.parse(descriptor);
-        this.groupsKeys = Object.keys(descriptorObject).sort();
+        this.groupsKeys = Object.keys(descriptorObject).sort((a, b) => Number(a) - Number(b));
         this.groups = this.groupsKeys.map(groupKey => parseGroup(descriptorObject[groupKey]));
     }
 
