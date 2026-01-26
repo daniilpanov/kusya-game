@@ -250,8 +250,16 @@ class Game {
         return handlersMap[`action_${actionKey}`].bind(this)(mainArg, args);
     }
 
-    _interruptBackgroundProcesses() {
+    _isActiveBackgroundProcesses() {
+        return TemplaterTyperExtension.isActiveTypers();
+    }
+
+    _interruptActiveBackgroundProcesses() {
         TemplaterTyperExtension.endTyping();
+    }
+
+    _interruptBackgroundProcesses() {
+        this._interruptActiveBackgroundProcesses();
         this.needClickButton = false;
 
         if (this.activeTitleTimeoutId !== undefined) {
@@ -273,6 +281,9 @@ class Game {
     tryDoNextActionsGroup(isButtonClicked, { eventChoiceId, eventChoiceVariant } = {}) {
         if (this.needClickButton && !isButtonClicked)
             return;
+
+        if (this._isActiveBackgroundProcesses())
+            return this._interruptActiveBackgroundProcesses();
 
         if (eventChoiceId && eventChoiceVariant)
             this.variables[eventChoiceId] = eventChoiceVariant;
