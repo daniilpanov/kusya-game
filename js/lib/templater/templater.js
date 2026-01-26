@@ -7,10 +7,10 @@ const injectionHandlers = {
 
         for (const item of data) {
             const templateInstance = template.cloneNode(true);
-            const innerText = item.content || item.text;
+            const innerText = item.content ?? item.text;
 
             if (innerText) {
-                this.constructor.injectionHandlers.insertion(innerText, templateInstance);
+                this.constructor.injectionHandlers.insertion.bind(this)(innerText, templateInstance);
                 delete item.content;
                 delete item.text;
             }
