@@ -16,12 +16,16 @@ class SceneController {
 
     doActionsGroup(keyIdx) {
         this.currentActionsGroupKeyIndex = keyIdx;
-        this.groups[this.groupsKeys[keyIdx]].map(this.actionsHandler);
+        return this._doActionsGroup(this.groupsKeys[keyIdx]);
     }
 
     doActionsGroupByKey(key) {
         this.currentActionsGroupKeyIndex = this.groupsKeys.indexOf(key);
-        this.groups[key].map(this.actionsHandler);
+        return this._doActionsGroup(key);
+    }
+
+    _doActionsGroup(key) {
+        return Promise.allSettled(this.groups[key].map(this.actionsHandler).filter(i => i instanceof Promise));
     }
 }
 

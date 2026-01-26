@@ -5,7 +5,7 @@ const handlersMap = {
     },
     action_if(groupKey, [ condition ]) {
         if (this.expressionsParser.evaluate(condition))
-            handlersMap.action_goto(groupKey);
+            return handlersMap.action_goto.bind(this)(groupKey);
     },
     action_setVar(value, [ varName ]) {
         this.variables[varName] = value;
@@ -14,7 +14,10 @@ const handlersMap = {
         this.stats[statName] += value;
     },
     action_goto(groupKey) {
-        this.sceneController.doActionsGroupByKey(String(groupKey));
+        return this.sceneController.doActionsGroupByKey(String(groupKey));
+    },
+    action_gotoNext() {
+        return this.sceneController.doNextActionsGroup();
     },
     action_showChoice(variants, choiceKey) {
 
@@ -167,10 +170,10 @@ class Game {
     }
 
     handleAction({ actionKey, mainArg, args }) {
-        handlersMap[`action_${actionKey}`](mainArg, args).bind(this);
+        return handlersMap[`action_${actionKey}`].bind(this)(mainArg, args);
     }
 
     start() {
-        this.sceneController.doNextActionsGroup();
+        return this.sceneController.doNextActionsGroup();
     }
 }
