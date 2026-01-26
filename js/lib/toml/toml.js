@@ -48,7 +48,7 @@ var toml = (function () {
         currentGroup[pair.name] = value;
 
         function parseNameValue(line) {
-            var equal = line.indexOf('=');
+            var equal = line.lastIndexOf('=');  // FIXME: can't use "=" symbol in value
             return {
                 name: line.substring(0, equal).trim(),
                 value: line.substring(equal + 1)
@@ -56,6 +56,8 @@ var toml = (function () {
         }
 
         function parseValue(value) {
+            value = value.trim();
+
             if (array(value)) {
                 return parseArray(value);
             }
@@ -112,7 +114,14 @@ var toml = (function () {
                 return new Date(value);
             }
 
-            return eval(value);
+            if (value.startsWith('"') && value.endsWith('"'))
+                return value.slice(1, -1);
+
+            var numberValue = Number(value);
+            if (Number.isNaN(numberValue))
+                return value;
+
+            return numberValue;
 
             function date(value) {
                 return (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/).test(value);
