@@ -99,7 +99,22 @@
                 charactersContainer.appendChild(img);
             });
         })
-        .then(() => game.start());
+        .then(() => game.doNextActionsGroup());
+
+    window.addEventListener("click", ev => {
+        const isButtonClicked = ev.target.tagName === "BUTTON" || ev.target.tagName === "A";
+
+        if (isButtonClicked && (ev.target.id === "menuBtn" || !ev.target.closest(".game-container")))
+            return;
+
+        if (isButtonClicked)
+            game.tryDoNextActionsGroup(true, {
+                eventChoiceId: ev.target.getAttribute("data-bs-event-choice-id"),
+                eventChoiceVariant: ev.target.getAttribute("data-bs-event-choice-variant"),
+            });
+        else
+            game.tryDoNextActionsGroup(false);
+    });
 </script>
 </body>
 </html>

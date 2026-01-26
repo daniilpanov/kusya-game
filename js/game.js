@@ -25,10 +25,10 @@ const handlersMap = {
         this.stats[statName] += value;
     },
     action_goto(groupKey) {
-        return this.sceneController.doActionsGroupByKey(String(groupKey));
+        return this.doActionsGroupByKey(String(groupKey));
     },
     action_gotoNext() {
-        return this.sceneController.doNextActionsGroup();
+        return this.doNextActionsGroup();
     },
     action_showPersonSprite(personSprite, [ hideAllOther = false ]) {
         if (!personSprite) {
@@ -52,6 +52,7 @@ const handlersMap = {
         return currentPersonObj;
     },
     action_showChoice(variants, [ choiceKey, personSprite, pseudoName, hideAllOther = true ]) {
+        this.needClickButton = true;
         this.templateWrappers.choices?.classList.add("active");
         this.templateWrappers.dialog?.classList.remove("active");
 
@@ -81,17 +82,22 @@ const handlersMap = {
             this.templateWrappers.sceneTitle?.classList.remove("inactive");
             this.templates.sceneTitle?.render({ title });
 
-            setTimeout(() => {
+            this.activeTitleTimeoutId = setTimeout(() => {
+                if (!this.activeTitleTimeoutId)
+                    return;
+
                 this.templateWrappers.sceneTitle?.classList.add("inactive");
+                this.activeTitleTimeoutId = undefined;
+
                 const res = handlersMap.action_gotoNext.bind(this)();
                 return res instanceof Promise ? res.then(r) : r(res);
-            }, 1000);
+            }, 5000);
         });
     },
     action_gotoNextScene() {
         this.templateWrappers.dialog?.classList.remove("active");
         this.templateWrappers.choices?.classList.remove("active");
-        return this.loadSceneByKeyIndex(this.currentSceneKeyIndex + 1).then(() => this.start());
+        return this.loadSceneByKeyIndex(this.currentSceneKeyIndex + 1).then(() => this.doNextActionsGroup());
     },
     action_gotoScene(sceneKey) {
         return this.loadSceneByKey(sceneKey);
@@ -110,6 +116,8 @@ class Game {
 
     currentSceneKeyIndex = undefined;
     activePersons = [];
+    activeTitleTimeoutId = undefined;
+    needClickButton = false;
 
     stats = undefined;
     persons = undefined;
@@ -216,11 +224,6 @@ class Game {
 
         await this.loadSceneByKeyIndex(0);
 
-        this.templateWrappers.dialog?.addEventListener("click", () => {
-            TemplaterTyperExtension.endTyping();
-            this.sceneController.doNextActionsGroup();
-        });
-
         return { headInjections, spriteImages };
     }
 
@@ -247,7 +250,33 @@ class Game {
         return handlersMap[`action_${actionKey}`].bind(this)(mainArg, args);
     }
 
-    start() {
+    _interruptBackgroundProcesses() {
+        TemplaterTyperExtension.endTyping();
+        this.needClickButton = false;
+
+        if (this.activeTitleTimeoutId !== undefined) {
+            this.templateWrappers.sceneTitle?.classList.add("inactive");
+            this.activeTitleTimeoutId = undefined;
+        }
+    }
+
+    doActionsGroupByKey(key) {
+        this._interruptBackgroundProcesses();
+        return this.sceneController.doActionsGroupByKey(key);
+    }
+
+    doNextActionsGroup() {
+        this._interruptBackgroundProcesses();
         return this.sceneController.doNextActionsGroup();
+    }
+
+    tryDoNextActionsGroup(isButtonClicked, { eventChoiceId, eventChoiceVariant } = {}) {
+        if (this.needClickButton && !isButtonClicked)
+            return;
+
+        if (eventChoiceId && eventChoiceVariant)
+            this.variables[eventChoiceId] = eventChoiceVariant;
+
+        return this.doNextActionsGroup();
     }
 }
