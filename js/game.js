@@ -22,7 +22,7 @@ const handlersMap = {
         this.variables[varName] += value;
     },
     action_addStats(value, [ statName ]) {
-        this.stats[statName] += value;
+        this.stats[statName].value += value;
     },
     action_goto(groupKey) {
         return this.doActionsGroupByKey(String(groupKey));
