@@ -1,0 +1,12 @@
+[0]
+setBackground = 1
+showTitle = "Ночная неожиданность"
+[1]
+movePersonSprite(0, 0) = "stranger"
+showPhrase(stranger.default) = "Где я???"
+[2]
+showPhrase = "Ви огляделся"
+[3]
+showPhrase = "До свидания!"
+[4]
+end =

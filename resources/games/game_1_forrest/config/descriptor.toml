@@ -1,0 +1,43 @@
+[templates]
+styles = "styles.css"
+choices = "choices_template.html"
+dialog = "dialog_template.html"
+sceneTitle = "scene_title_template.html"
+
+
+[scenes]
+[scenes.1]
+RU = "scenes/1.ru.act"
+[scenes.2]
+RU = "scenes/2.ru.act"
+
+
+[backgrounds]
+[backgrounds.1]
+src = "bg/forrest-night/house-behind-trees.png"
+position = "static"
+
+[backgrounds.2]
+src = "bg/forrest-night/house-in-forrest.png"
+position = "static"
+
+
+[persons]
+[persons.mm]
+name = "Лесник"
+[persons.mm.sprites]
+default = "sprites/main-man/usual.png"
+good = "sprites/main-man/good.png"
+angry = "sprites/main-man/angry.png"
+
+[persons.mw]
+name = "Знахарка"
+[persons.mw.sprites]
+default = "sprites/main-woman/usual.png"
+wtf = "sprites/main-woman/wtf.png"
+angry = "sprites/main-woman/angry.png"
+
+[persons.stranger]
+name = "Незнакомка"
+[persons.stranger.sprites]
+default = "sprites/stranger.png"
