@@ -6,7 +6,7 @@ showPhrase = "This is a demo game"
 [2]
 showPhrase(vi.smile) = "А тут красиво"
 [3]
-showChoice(nextDoing) = [ "Отвернуться", "Продолжить смотреть" ]
+showChoice(nextDoing, vi.smile) = [ "Что Ви сделал дальше?", "Отвернулся", "Продолжил смотреть" ]
 [4]
 if(nextDoing.1) = 5
 if(nextDoing.2) = 6
