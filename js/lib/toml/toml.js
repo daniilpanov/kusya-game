@@ -82,7 +82,7 @@ var toml = (function () {
 
                 function commasMap(value) {
                     var map = [];
-                    var inArray = false, depth = 0;
+                    var depth = 0;
                     for(var index = 0; index < value.length; index++) {
                         var element = value[index];
                         if (element === '[') {
@@ -147,10 +147,6 @@ var toml = (function () {
             line = stripComments(line);
             parseLine(context, line);
         });
-
-        function replaceWhitespaces(line) {
-            return line.replace(/\s/g, '');
-        }
 
         function stripComments(line) {
             return line.split('#')[0];
