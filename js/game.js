@@ -201,7 +201,7 @@ class Game {
                 sprites[spriteKey] = img;
             }
 
-            persons[personKey] = new CharacterView(person.name, sprites);
+            persons[personKey] = new PersonController(person.name, sprites);
         }
 
         this.persons = persons;
