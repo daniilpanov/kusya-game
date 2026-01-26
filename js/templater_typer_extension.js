@@ -10,6 +10,15 @@ class TemplaterTyperExtension {
         return typer.startTyping();
     }
 
+    static isActiveTypers() {
+        for (const typer of this.currentTypers) {
+            if (!typer.finished)
+                return true;
+        }
+
+        return false;
+    }
+
     static endTyping() {
         this.currentTypers.forEach(typer => typer.endTyping());
     }
