@@ -28,8 +28,8 @@ class SceneController {
 const parseGroup = group => Object.keys(group).map(key => parseAction(key, group[key]));
 
 function parseAction(key, mainArg) {
-    const { actionKey, stringArgs } = key.split("(", 2);
-    const args = stringArgs.slice(0, -1).split(",").map(arg => arg.trim());
+    const [ actionKey, stringArgs ] = key.split("(", 2);
+    const args = stringArgs?.slice(0, -1).split(",").map(arg => arg.trim()) || [];
 
     return { actionKey, mainArg, args };
 }
