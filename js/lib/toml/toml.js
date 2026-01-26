@@ -1,3 +1,7 @@
+// TOML parser implementation, v0.0.8
+// Copyright (c)2013 alexander.beletsky@gmail.com
+// Distributed under MIT license
+// http://github.com/alexander.beletsky/toml.js
 var toml = (function () {
 
     var parseGroup = function (context, str) {
