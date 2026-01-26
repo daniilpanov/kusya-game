@@ -22,16 +22,13 @@
     <div class="characters-container" id="charactersContainer"></div>
 
     <!-- Диалоговое окно -->
-    <div class="dialogue-container active" id="dialogueContainer">
-        <div class="dialogue-box">
-            <div class="character-name" id="characterName"></div>
-            <div class="dialogue-text" id="dialogueText"></div>
-            <div class="next-indicator">▼</div>
-        </div>
-    </div>
+    <div class="dialogue-container active" id="dialogueContainer"></div>
 
     <!-- Контейнер для выбора -->
     <div class="choices-container" id="choicesContainer"></div>
+
+    <!-- Scene title -->
+    <div class="scene-title inactive" id="sceneTitle"></div>
 
     <!-- Панель управления -->
     <div class="control-panel">
@@ -82,8 +79,18 @@
     if (!gameResource || !gameDescriptorUri)
         throw new Error('Missing required gameDescriptorUri');
 
-    const game = new Game(gameResource, gameDescriptorUri);
+    const game = new Game(
+        gameResource,
+        gameDescriptorUri,
+        document.getElementById("sceneBackground"),
+        {
+            dialog: document.getElementById("dialogueContainer"),
+            choices: document.getElementById("choicesContainer"),
+            sceneTitle: document.getElementById("sceneTitle"),
+        },
+    );
     window.game = game;
+
     game.init()
         .then(({ headInjections, spriteImages }) => {
             headInjections.forEach(item => document.head.appendChild(item));

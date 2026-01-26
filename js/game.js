@@ -52,11 +52,16 @@ class Game {
     templates = undefined;
     backgrounds = undefined;
 
-    constructor(gameResource, descriptorUri) {
+    constructor(gameResource, descriptorUri, bgWrapper, templateWrappers) {
+        this.bgWrapper = bgWrapper;
+        this.templateWrappers = templateWrappers || {};
+
         this.gameResource = gameResource;
         this.descriptorUri = descriptorUri;
         this.variables = {};
-        this.expressionsParser = new ExpressionsParser(varName => this.variables[varName]);
+        this.expressionsParser = new ExpressionsParser(
+            varName => varName.startsWith("stats.") ? this.stats[varName.slice(6)].value : this.variables[varName],
+        );
     }
 
     async init() {
@@ -87,9 +92,10 @@ class Game {
                 const styleEl = document.createElement("style");
                 styleEl.innerHTML = res.body.innerHTML;
                 headInjections.push(styleEl);
+            } else {
+                templates[templateName] = new Templater(res.body);
+                this.templateWrappers[templateName]?.appendChild(res.body.children[0]);
             }
-            else
-                templates[templateName] = res.body;
         }
 
         this.templates = templates;
@@ -145,9 +151,13 @@ class Game {
         this.sortedSceneKeys = Object.keys(scenes).sort();
 
         await this.loadSceneByKeyIndex(0);
-        return { headInjections, spriteImages };
 
-        // document.getElementById('dialogueContainer').onclick = () => this.nextAction();
+        this.templateWrappers.dialog?.addEventListener("click", () => {
+            TemplaterTyperExtension.endTyping();
+            this.sceneController.doNextActionsGroup();
+        });
+
+        return { headInjections, spriteImages };
     }
 
     loadSceneByKeyIndex(keyIndex) {
