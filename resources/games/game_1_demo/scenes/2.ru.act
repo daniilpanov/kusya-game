@@ -22,6 +22,7 @@ showPhrase(vi.default) = "Ё моё"
 if(died) = 10
 [9]
 addStats(alive) = 1
+gotoNext =
 [10]
 if(!stats.alive) = 12
 [11]
