@@ -23,7 +23,7 @@ if(died) = 10
 [9]
 addStats(alive) = 1
 [10]
-if(!stat.alive) = 12
+if(!stats.alive) = 12
 [11]
 showPhrase(vi.smile) = "Я крут!"
 [12]
