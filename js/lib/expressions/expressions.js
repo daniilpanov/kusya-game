@@ -51,7 +51,7 @@ class ExpressionsParser {
                 continue;
             }
 
-            // Операторы сравнения и логические операторы
+            // Comparison and boolean operators
             if (char === '=' || char === '&' || char === '|' || char === '<' || char === '>' || char === '!') {
                 if (nextChar === '=') {
                     tokens.push({ type: TOKEN_TYPE_OPERATOR, value: char + '=' });
@@ -70,7 +70,7 @@ class ExpressionsParser {
                 continue;
             }
 
-            // Строки в кавычках
+            // Strings in quotes
             if (char === '"' || char === "'") {
                 const quote = char;
                 let value = '';
@@ -82,11 +82,11 @@ class ExpressionsParser {
                 }
 
                 tokens.push({ type: TOKEN_TYPE_STRING, value });
-                i++; // пропускаем закрывающую кавычку
+                i++; // Skip closing quote
                 continue;
             }
 
-            // Числа
+            // Numbers
             if (/[-0-9]/.test(char)) {
                 let value = '';
                 while (i < this.expression.length && /[-0-9.]/.test(this.expression[i])) {
@@ -97,7 +97,7 @@ class ExpressionsParser {
                 continue;
             }
 
-            // Идентификаторы (переменные)
+            // Identifiers
             if (/[a-zA-Z_$]/.test(char)) {
                 let value = '';
                 while (i < this.expression.length && /[a-zA-Z0-9_.$]/.test(this.expression[i])) {
@@ -108,17 +108,14 @@ class ExpressionsParser {
                 continue;
             }
 
-            // Если символ не распознан
-            throw new Error(`Неизвестный символ: ${char}`);
+            throw new Error(`Unknown symbol: ${char}`);
         }
 
         return tokens;
     }
 
-    // Парсинг выражений с учетом приоритетов операторов
-    parseExpression() {
-        return this.parseOr();
-    }
+    // Parse expressions
+    parseExpression() { return this.parseOr(); }
 
     parseOr() {
         let left = this.parseAnd();
@@ -188,10 +185,10 @@ class ExpressionsParser {
             return { type: TOKEN_TYPE_LITERAL, value: token.value };
         }
 
-        throw new Error('Неожиданный токен');
+        throw new Error('Unexpected token');
     }
 
-    // Вспомогательные методы для работы с токенами
+    // Token helpers
     match(...operators) {
         for (const op of operators) {
             if (this.check(TOKEN_TYPE_OPERATOR, op)) {
@@ -203,10 +200,10 @@ class ExpressionsParser {
     }
 
     consume(expectedValue) {
-        if (this.check(TOKEN_TYPE_OPERATOR, expectedValue)) {
+        if (this.check(TOKEN_TYPE_OPERATOR, expectedValue))
             return this.advance();
-        }
-        throw new Error(`Ожидался оператор: ${expectedValue}`);
+
+        throw new Error(`Expected: ${expectedValue}`);
     }
 
     check(type, value = undefined) {
