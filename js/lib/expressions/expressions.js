@@ -1,3 +1,13 @@
+const TOKEN_TYPE_OPERATOR = 0;
+const TOKEN_TYPE_STRING = 1;
+const TOKEN_TYPE_NUMBER = 2;
+const TOKEN_TYPE_IDENTIFIER = 3;
+const TOKEN_TYPE_BINARY = 4;
+const TOKEN_TYPE_UNARY = 5;
+const TOKEN_TYPE_COMPARISON = 6;
+const TOKEN_TYPE_VARIABLE = 7;
+const TOKEN_TYPE_LITERAL = 8;
+
 class ExpressionsParser {
     constructor({ getFromContextCallback = undefined, expression = undefined }, evaluate = false) {
         this.expression = expression;
@@ -30,15 +40,13 @@ class ExpressionsParser {
             const char = this.expression[i];
             const nextChar = this.expression[i + 1];
 
-            // Пропускаем пробелы
             if (char === ' ') {
                 i++;
                 continue;
             }
 
-            // Скобки и операторы
             if (char === '(' || char === ')' || char === '!' && nextChar !== '=') {
-                tokens.push({ type: 'operator', value: char });
+                tokens.push({ type: TOKEN_TYPE_OPERATOR, value: char });
                 i++;
                 continue;
             }
@@ -46,16 +54,16 @@ class ExpressionsParser {
             // Операторы сравнения и логические операторы
             if (char === '=' || char === '&' || char === '|' || char === '<' || char === '>' || char === '!') {
                 if (nextChar === '=') {
-                    tokens.push({ type: 'operator', value: char + '=' });
+                    tokens.push({ type: TOKEN_TYPE_OPERATOR, value: char + '=' });
                     i += 2;
                 } else if (char === '&' && nextChar === '&') {
-                    tokens.push({ type: 'operator', value: '&&' });
+                    tokens.push({ type: TOKEN_TYPE_OPERATOR, value: '&&' });
                     i += 2;
                 } else if (char === '|' && nextChar === '|') {
-                    tokens.push({ type: 'operator', value: '||' });
+                    tokens.push({ type: TOKEN_TYPE_OPERATOR, value: '||' });
                     i += 2;
                 } else if (char === '<' || char === '>') {
-                    tokens.push({ type: 'operator', value: char });
+                    tokens.push({ type: TOKEN_TYPE_OPERATOR, value: char });
                     i++;
                 } else
                     throw new Error(`Unknown operator: ${char}`);
@@ -73,7 +81,7 @@ class ExpressionsParser {
                     i++;
                 }
 
-                tokens.push({ type: 'string', value });
+                tokens.push({ type: TOKEN_TYPE_STRING, value });
                 i++; // пропускаем закрывающую кавычку
                 continue;
             }
@@ -85,7 +93,7 @@ class ExpressionsParser {
                     value += this.expression[i];
                     i++;
                 }
-                tokens.push({ type: 'number', value: parseFloat(value) });
+                tokens.push({ type: TOKEN_TYPE_NUMBER, value: parseFloat(value) });
                 continue;
             }
 
@@ -96,7 +104,7 @@ class ExpressionsParser {
                     value += this.expression[i];
                     i++;
                 }
-                tokens.push({ type: 'identifier', value });
+                tokens.push({ type: TOKEN_TYPE_IDENTIFIER, value });
                 continue;
             }
 
@@ -118,7 +126,7 @@ class ExpressionsParser {
         while (this.match('||')) {
             const operator = this.previous().value;
             const right = this.parseAnd();
-            left = { type: 'binary', operator, left, right };
+            left = { type: TOKEN_TYPE_BINARY, operator, left, right };
         }
 
         return left;
@@ -130,7 +138,7 @@ class ExpressionsParser {
         while (this.match('&&')) {
             const operator = this.previous().value;
             const right = this.parseComparison();
-            left = { type: 'binary', operator, left, right };
+            left = { type: TOKEN_TYPE_BINARY, operator, left, right };
         }
 
         return left;
@@ -142,7 +150,7 @@ class ExpressionsParser {
         while (this.match('==', '!=', '<', '>', '<=', '>=')) {
             const operator = this.previous().value;
             const right = this.parseUnary();
-            left = { type: 'comparison', operator, left, right };
+            left = { type: TOKEN_TYPE_COMPARISON, operator, left, right };
         }
 
         return left;
@@ -152,7 +160,7 @@ class ExpressionsParser {
         if (this.match('!')) {
             const operator = this.previous().value;
             const right = this.parseUnary();
-            return { type: 'unary', operator, right };
+            return { type: TOKEN_TYPE_UNARY, operator, right };
         }
 
         return this.parsePrimary();
@@ -165,19 +173,19 @@ class ExpressionsParser {
             return expr;
         }
 
-        if (this.check('identifier')) {
+        if (this.check(TOKEN_TYPE_IDENTIFIER)) {
             const token = this.advance();
-            return { type: 'variable', name: token.value };
+            return { type: TOKEN_TYPE_VARIABLE, name: token.value };
         }
 
-        if (this.check('string')) {
+        if (this.check(TOKEN_TYPE_STRING)) {
             const token = this.advance();
-            return { type: 'literal', value: token.value };
+            return { type: TOKEN_TYPE_LITERAL, value: token.value };
         }
 
-        if (this.check('number')) {
+        if (this.check(TOKEN_TYPE_NUMBER)) {
             const token = this.advance();
-            return { type: 'literal', value: token.value };
+            return { type: TOKEN_TYPE_LITERAL, value: token.value };
         }
 
         throw new Error('Неожиданный токен');
@@ -186,7 +194,7 @@ class ExpressionsParser {
     // Вспомогательные методы для работы с токенами
     match(...operators) {
         for (const op of operators) {
-            if (this.check('operator', op)) {
+            if (this.check(TOKEN_TYPE_OPERATOR, op)) {
                 this.advance();
                 return true;
             }
@@ -195,7 +203,7 @@ class ExpressionsParser {
     }
 
     consume(expectedValue) {
-        if (this.check('operator', expectedValue)) {
+        if (this.check(TOKEN_TYPE_OPERATOR, expectedValue)) {
             return this.advance();
         }
         throw new Error(`Ожидался оператор: ${expectedValue}`);
@@ -224,7 +232,7 @@ class ExpressionsParser {
 
     evaluateAST(node) {
         switch (node.type) {
-            case 'binary':
+            case TOKEN_TYPE_BINARY:
                 if (node.operator === '&&')
                     return this.evaluateAST(node.left) && this.evaluateAST(node.right);
 
@@ -233,7 +241,7 @@ class ExpressionsParser {
 
                 throw new Error(`Unknown binary operator: ${node.operator}`)
 
-            case 'comparison':
+            case TOKEN_TYPE_COMPARISON:
                 const left = this.evaluateAST(node.left);
                 const right = this.evaluateAST(node.right);
 
@@ -247,16 +255,16 @@ class ExpressionsParser {
                     default: throw new Error(`Unknown comparison operator: ${node.operator}`);
                 }
 
-            case 'unary':
+            case TOKEN_TYPE_UNARY:
                 if (node.operator !== '!')
                     throw new Error(`Unknown unary operator: ${node.operator}`)
 
                 return !this.evaluateAST(node.right);
 
-            case 'variable':
+            case TOKEN_TYPE_VARIABLE:
                 return this._getFromContext(node.name);
 
-            case 'literal':
+            case TOKEN_TYPE_LITERAL:
                 return node.value;
         }
 
@@ -264,10 +272,10 @@ class ExpressionsParser {
     }
 
     getValue(node) {
-        if (node.type === 'variable')
+        if (node.type === TOKEN_TYPE_VARIABLE)
             return this._getFromContext(node.name);
 
-        if (node.type === 'literal')
+        if (node.type === TOKEN_TYPE_LITERAL)
             return node.value;
 
         throw new Error(`Unknown node type [getting a value]: ${node.type}`);
