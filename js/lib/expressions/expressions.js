@@ -41,13 +41,13 @@ class ExpressionsParser {
             const nextChar = this.expression[i + 1];
 
             if (char === ' ') {
-                i++;
+                ++i;
                 continue;
             }
 
             if (char === '(' || char === ')' || char === '!' && nextChar !== '=') {
                 tokens.push({ type: TOKEN_TYPE_OPERATOR, value: char });
-                i++;
+                ++i;
                 continue;
             }
 
@@ -64,7 +64,7 @@ class ExpressionsParser {
                     i += 2;
                 } else if (char === '<' || char === '>') {
                     tokens.push({ type: TOKEN_TYPE_OPERATOR, value: char });
-                    i++;
+                    ++i;
                 } else
                     throw new Error(`Unknown operator: ${char}`);
                 continue;
@@ -74,15 +74,15 @@ class ExpressionsParser {
             if (char === '"' || char === "'") {
                 const quote = char;
                 let value = '';
-                i++;
+                ++i;
 
                 while (i < this.expression.length && this.expression[i] !== quote) {
                     value += this.expression[i];
-                    i++;
+                    ++i;
                 }
 
                 tokens.push({ type: TOKEN_TYPE_STRING, value });
-                i++; // Skip closing quote
+                ++i; // Skip closing quote
                 continue;
             }
 
@@ -91,7 +91,7 @@ class ExpressionsParser {
                 let value = '';
                 while (i < this.expression.length && /[-0-9.]/.test(this.expression[i])) {
                     value += this.expression[i];
-                    i++;
+                    ++i;
                 }
                 tokens.push({ type: TOKEN_TYPE_NUMBER, value: parseFloat(value) });
                 continue;
@@ -102,7 +102,7 @@ class ExpressionsParser {
                 let value = '';
                 while (i < this.expression.length && /[a-zA-Z0-9_.$]/.test(this.expression[i])) {
                     value += this.expression[i];
-                    i++;
+                    ++i;
                 }
                 tokens.push({ type: TOKEN_TYPE_IDENTIFIER, value });
                 continue;
@@ -223,9 +223,7 @@ class ExpressionsParser {
         throw new Error('Unexpected end of expression');
     }
 
-    previous() {
-        return this._tokens[this._index - 1];
-    }
+    previous() { return this._tokens[this._index - 1]; }
 
     evaluateAST(node) {
         switch (node.type) {
