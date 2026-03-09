@@ -1,24 +1,34 @@
 class ExpressionsParser {
-    constructor(getVar) {
-        this.getVar = getVar;
-        this.tokens = [];
-        this.index = 0;
+    constructor({ getFromContextCallback = undefined, expression = undefined }, evaluate = false) {
+        this.expression = expression;
+
+        this._getFromContext = getFromContextCallback;
+        this._tokens = [];
+        this._index = 0;
+
+        if (evaluate)
+            this.evaluate();
+        else
+            this.lastValue = undefined;
     }
 
-    evaluate(condition) {
-        this.tokens = this.tokenize(condition);
-        this.index = 0;
+    setContext(getFromContextCallback) { this._getFromContext = getFromContextCallback; }
+    setExpression(expression) { this.expression = expression; }
+
+    evaluate() {
+        this._tokens = this.tokenize();
+        this._index = 0;
         const ast = this.parseExpression();
-        return this.evaluateAST(ast);
+        return this.lastValue = this.evaluateAST(ast);
     }
 
-    tokenize(condition) {
+    tokenize() {
         const tokens = [];
         let i = 0;
 
-        while (i < condition.length) {
-            const char = condition[i];
-            const nextChar = condition[i + 1];
+        while (i < this.expression.length) {
+            const char = this.expression[i];
+            const nextChar = this.expression[i + 1];
 
             // Пропускаем пробелы
             if (char === ' ') {
@@ -58,8 +68,8 @@ class ExpressionsParser {
                 let value = '';
                 i++;
 
-                while (i < condition.length && condition[i] !== quote) {
-                    value += condition[i];
+                while (i < this.expression.length && this.expression[i] !== quote) {
+                    value += this.expression[i];
                     i++;
                 }
 
@@ -71,8 +81,8 @@ class ExpressionsParser {
             // Числа
             if (/[-0-9]/.test(char)) {
                 let value = '';
-                while (i < condition.length && /[-0-9.]/.test(condition[i])) {
-                    value += condition[i];
+                while (i < this.expression.length && /[-0-9.]/.test(this.expression[i])) {
+                    value += this.expression[i];
                     i++;
                 }
                 tokens.push({ type: 'number', value: parseFloat(value) });
@@ -82,8 +92,8 @@ class ExpressionsParser {
             // Идентификаторы (переменные)
             if (/[a-zA-Z_$]/.test(char)) {
                 let value = '';
-                while (i < condition.length && /[a-zA-Z0-9_.$]/.test(condition[i])) {
-                    value += condition[i];
+                while (i < this.expression.length && /[a-zA-Z0-9_.$]/.test(this.expression[i])) {
+                    value += this.expression[i];
                     i++;
                 }
                 tokens.push({ type: 'identifier', value });
@@ -192,24 +202,24 @@ class ExpressionsParser {
     }
 
     check(type, value = undefined) {
-        if (this.index >= this.tokens.length)
+        if (this._index >= this._tokens.length)
             return false;
 
-        const token = this.tokens[this.index];
+        const token = this._tokens[this._index];
 
         return (token.type === type) && (value === undefined || token.value === value);
 
     }
 
     advance() {
-        if (this.index < this.tokens.length)
-            return this.tokens[this.index++];
+        if (this._index < this._tokens.length)
+            return this._tokens[this._index++];
 
         throw new Error('Unexpected end of expression');
     }
 
     previous() {
-        return this.tokens[this.index - 1];
+        return this._tokens[this._index - 1];
     }
 
     evaluateAST(node) {
@@ -244,7 +254,7 @@ class ExpressionsParser {
                 return !this.evaluateAST(node.right);
 
             case 'variable':
-                return this.getVar(node.name);
+                return this._getFromContext(node.name);
 
             case 'literal':
                 return node.value;
@@ -255,7 +265,7 @@ class ExpressionsParser {
 
     getValue(node) {
         if (node.type === 'variable')
-            return this.getVar(node.name);
+            return this._getFromContext(node.name);
 
         if (node.type === 'literal')
             return node.value;
