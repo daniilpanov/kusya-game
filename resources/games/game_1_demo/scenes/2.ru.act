@@ -6,6 +6,7 @@ showPhrase = "This is a demo game"
 [2]
 showPhrase(vi.smile) = "А тут красиво"
 [3]
+movePersonSprite(1, 0) = "vi"
 showChoice(nextDoing, vi.smile) = [ "Что Ви сделал дальше?", "Отвернулся", "Продолжил смотреть" ]
 [4]
 if(nextDoing == "Отвернулся") = 7

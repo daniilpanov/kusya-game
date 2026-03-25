@@ -4,6 +4,7 @@ showTitle = "Первая сцена"
 [1]
 showPhrase = "This is a demo game"
 [2]
+movePersonSprite(0, 0) = "vi"
 showPhrase(vi.default, Незнакомец) = "Где я???"
 [3]
 showPhrase = "Ви огляделся"
