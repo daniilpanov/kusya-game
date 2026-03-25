@@ -30,6 +30,9 @@ class PersonController {
     }
 
     updatePosition() {
+        if (this.currentSprite === undefined)
+            return;
+
         const sprite = this.spritesMap[this.currentSprite];
 
         if (Math.abs(this.x - 0.5) < 0.01) {

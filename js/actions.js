@@ -1,3 +1,13 @@
+const validateCoordinates = (x, y) => {
+    x = Number.parseFloat(x);
+    y = Number.parseFloat(y);
+
+    if (Number.isNaN(x) || Number.isNaN(y))
+        throw new Error(`X or Y is not a finite number [X: ${x}, Y: ${y}]`);
+
+    return [x, y];
+}
+
 const createHandlersMap = () => ({
     action_setBackground(bgKey) {
         bgKey = String(bgKey);
@@ -30,7 +40,14 @@ const createHandlersMap = () => ({
     action_gotoNext() {
         return this.doNextActionsGroup();
     },
-    action_showPersonSprite(personSprite, [ hideAllOther = false ]) {
+    action_movePersonSprite(personSprite, [ x, y ]) {
+        const [ vx, vy ] = validateCoordinates(x, y);
+
+        const [ personId ] = personSprite.split(".");
+        const currentPersonObj = this.persons[personId];
+        currentPersonObj.setAnchorPosition(vx, vy);
+    },
+    action_showPersonSprite(personSprite, [ hideAllOther = false, x = undefined, y = undefined ]) {
         if (!personSprite) {
             if (hideAllOther)
                 this.activePersons.forEach(person => person.hide());
@@ -45,6 +62,11 @@ const createHandlersMap = () => ({
             for (const person of this.activePersons)
                 if (person.name !== currentPersonObj.name)
                     person.hide();
+
+        if (x !== undefined && y !== undefined) {
+            const [ vx, vy ] = validateCoordinates(x, y);
+            currentPersonObj.setAnchorPosition(vx, vy);
+        }
 
         currentPersonObj.show(personSpriteId);
         this.activePersons.push(currentPersonObj);
