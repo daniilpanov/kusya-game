@@ -25,7 +25,10 @@ class ExpressionsParser {
     setContext(getFromContextCallback) { this._getFromContext = getFromContextCallback; }
     setExpression(expression) { this.expression = expression; }
 
-    evaluate() {
+    evaluate(expression = undefined) {
+        if (expression)
+            this.setExpression(expression);
+
         this._tokens = this.tokenize();
         this._index = 0;
         const ast = this.parseExpression();
