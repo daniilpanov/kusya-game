@@ -131,9 +131,9 @@ class Game {
         this.gameResource = gameResource;
         this.descriptorUri = descriptorUri;
         this.variables = {};
-        this.expressionsParser = new ExpressionsParser(
-            varName => varName.startsWith("stats.") ? this.stats[varName.slice(6)].value : this.variables[varName],
-        );
+
+        const getFromContextCallback = varName => varName.startsWith("stats.") ? this.stats[varName.slice(6)].value : this.variables[varName];
+        this.expressionsParser = new ExpressionsParser({ getFromContextCallback });
     }
 
     async init() {
