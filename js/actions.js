@@ -73,7 +73,10 @@ const createHandlersMap = () => ({
 
         return currentPersonObj;
     },
-    action_showChoice(variants, [ choiceKey, personSprite, pseudoName, hideAllOther = true ]) {
+    action_showChoice(variants, [ choiceKey, hideAllOther = true ]) {
+        this.handlersMap.action_showChoicePerson(variants, [choiceKey, null, null, hideAllOther]);
+    },
+    action_showChoicePerson(variants, [ choiceKey, personSprite, pseudoName, hideAllOther = true ]) {
         this.needClickButton = true;
         this.templateWrappers.choices?.classList.add("active");
         this.templateWrappers.dialog?.classList.remove("active");
@@ -90,7 +93,10 @@ const createHandlersMap = () => ({
 
         this.templates.choices?.render({ author, text, choicesList });
     },
-    action_showPhrase(text, [ personSprite, pseudoName, hideAllOther = true ]) {
+    action_showPhrase(text, [ hideAllOther = true ]) {
+        this.handlersMap.action_showPhrasePerson(text, [null, null, hideAllOther]);
+    },
+    action_showPhrasePerson(text, [ personSprite, pseudoName, hideAllOther = true ]) {
         this.templateWrappers.choices?.classList.remove("active");
         this.templateWrappers.dialog?.classList.add("active");
 

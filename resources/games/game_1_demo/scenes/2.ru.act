@@ -4,10 +4,10 @@ showTitle = "Вторая сцена"
 [1]
 showPhrase = "This is a demo game"
 [2]
-showPhrase(vi.smile) = "А тут красиво"
+showPhrasePerson(vi.smile) = "А тут красиво"
 [3]
 movePersonSprite(1, 0) = "vi"
-showChoice(nextDoing, vi.smile) = [ "Что Ви сделал дальше?", "Отвернулся", "Продолжил смотреть" ]
+showChoicePerson(nextDoing, vi.smile) = [ "Что Ви сделал дальше?", "Отвернулся", "Продолжил смотреть" ]
 [4]
 if(nextDoing == "Отвернулся") = 7
 if(nextDoing == "Продолжил смотреть") = 5
@@ -19,7 +19,7 @@ goto = 2
 [7]
 showPhrase = "Из темноты показался монстр..."
 [8]
-showPhrase(vi.default) = "Ё моё"
+showPhrasePerson(vi.default) = "Ё моё"
 if(died) = 10
 [9]
 addStats(alive) = 1
@@ -27,6 +27,6 @@ gotoNext =
 [10]
 if(!stats.alive) = 12
 [11]
-showPhrase(vi.smile) = "Я крут!"
+showPhrasePerson(vi.smile) = "Я крут!"
 [12]
 end =
