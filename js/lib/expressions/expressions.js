@@ -57,6 +57,37 @@ class ExpressionsParser {
                 continue;
             }
 
+            // Arithmetic operators
+            if (char === '+' || char === '-') {
+                tokens.push({ type: TOKEN_TYPE_OPERATOR, value: char });
+                ++i;
+                continue;
+            }
+
+            if (char === '*' && nextChar === '*') {
+                tokens.push({ type: TOKEN_TYPE_OPERATOR, value: '**' });
+                i += 2;
+                continue;
+            }
+
+            if (char === '*') {
+                tokens.push({ type: TOKEN_TYPE_OPERATOR, value: '*' });
+                ++i;
+                continue;
+            }
+
+            if (char === '/') {
+                tokens.push({ type: TOKEN_TYPE_OPERATOR, value: '/' });
+                ++i;
+                continue;
+            }
+
+            if (char === '^') {
+                tokens.push({ type: TOKEN_TYPE_OPERATOR, value: '**' });
+                ++i;
+                continue;
+            }
+
             // Comparison and boolean operators
             if (char === '=' || char === '&' || char === '|' || char === '<' || char === '>' || char === '!') {
                 if (nextChar === '=') {
@@ -93,9 +124,9 @@ class ExpressionsParser {
             }
 
             // Numbers
-            if (/[-0-9]/.test(char)) {
+            if (/[0-9]/.test(char)) {
                 let value = '';
-                while (i < this.expression.length && /[-0-9.]/.test(this.expression[i])) {
+                while (i < this.expression.length && /[0-9.]/.test(this.expression[i])) {
                     value += this.expression[i];
                     ++i;
                 }
@@ -148,12 +179,47 @@ class ExpressionsParser {
     }
 
     parseComparison() {
-        let left = this.parseUnary();
+        let left = this.parseAdditive();
 
         while (this.match('==', '!=', '<', '>', '<=', '>=')) {
             const operator = this.previous().value;
-            const right = this.parseUnary();
+            const right = this.parseAdditive();
             left = { type: TOKEN_TYPE_COMPARISON, operator, left, right };
+        }
+
+        return left;
+    }
+
+    parseAdditive() {
+        let left = this.parseMultiplicative();
+
+        while (this.match('+', '-')) {
+            const operator = this.previous().value;
+            const right = this.parseMultiplicative();
+            left = { type: TOKEN_TYPE_BINARY, operator, left, right };
+        }
+
+        return left;
+    }
+
+    parseMultiplicative() {
+        let left = this.parseExponentiation();
+
+        while (this.match('*', '/')) {
+            const operator = this.previous().value;
+            const right = this.parseExponentiation();
+            left = { type: TOKEN_TYPE_BINARY, operator, left, right };
+        }
+
+        return left;
+    }
+
+    parseExponentiation() {
+        let left = this.parseUnary();
+
+        if (this.match('**')) {
+            const right = this.parseExponentiation();
+            return { type: TOKEN_TYPE_BINARY, operator: '**', left, right };
         }
 
         return left;
@@ -164,6 +230,16 @@ class ExpressionsParser {
             const operator = this.previous().value;
             const right = this.parseUnary();
             return { type: TOKEN_TYPE_UNARY, operator, right };
+        }
+
+        if (this.match('-')) {
+            if (this.check(TOKEN_TYPE_NUMBER)) {
+                const token = this.advance();
+                return { type: TOKEN_TYPE_LITERAL, value: -token.value };
+            }
+
+            const right = this.parseUnary();
+            return { type: TOKEN_TYPE_UNARY, operator: '-', right };
         }
 
         return this.parsePrimary();
@@ -244,6 +320,21 @@ class ExpressionsParser {
                 if (node.operator === '||')
                     return this.evaluateAST(node.left) || this.evaluateAST(node.right);
 
+                if (node.operator === '+')
+                    return this.evaluateAST(node.left) + this.evaluateAST(node.right);
+
+                if (node.operator === '-')
+                    return this.evaluateAST(node.left) - this.evaluateAST(node.right);
+
+                if (node.operator === '*')
+                    return this.evaluateAST(node.left) * this.evaluateAST(node.right);
+
+                if (node.operator === '/')
+                    return this.evaluateAST(node.left) / this.evaluateAST(node.right);
+
+                if (node.operator === '**')
+                    return Math.pow(this.evaluateAST(node.left), this.evaluateAST(node.right));
+
                 throw new Error(`Unknown binary operator: ${node.operator}`)
 
             case TOKEN_TYPE_COMPARISON:
@@ -261,10 +352,13 @@ class ExpressionsParser {
                 }
 
             case TOKEN_TYPE_UNARY:
-                if (node.operator !== '!')
-                    throw new Error(`Unknown unary operator: ${node.operator}`)
+                if (node.operator === '!')
+                    return !this.evaluateAST(node.right);
 
-                return !this.evaluateAST(node.right);
+                if (node.operator === '-')
+                    return -this.evaluateAST(node.right);
+
+                throw new Error(`Unknown unary operator: ${node.operator}`)
 
             case TOKEN_TYPE_VARIABLE:
                 return this._getFromContext(node.name);
@@ -286,3 +380,6 @@ class ExpressionsParser {
         throw new Error(`Unknown node type [getting a value]: ${node.type}`);
     }
 }
+
+if (typeof module !== 'undefined' && module.exports)
+    module.exports = { ExpressionsParser };
