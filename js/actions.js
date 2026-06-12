@@ -6,48 +6,45 @@ const validateCoordinates = (x, y) => {
         throw new Error(`X or Y is not a finite number [X: ${x}, Y: ${y}]`);
 
     return [x, y];
-}
+};
 
 const createHandlersMap = () => ({
-    action_setBackground(bgKey) {
+    action_setBackground([ bgKey ]) {
         bgKey = String(bgKey);
-
         this.bgWrapper.innerHTML = "";
         this.bgWrapper.appendChild(this.backgrounds[bgKey].img);
     },
-    action_if(groupKey, [ condition ]) {
+    action_if([ condition, target ]) {
         if (this.expressionsParser.evaluate(condition))
-            return this.handlersMap.action_goto(groupKey);
+            return this.handlersMap.action_goto([ target ]);
     },
-    action_cloneVar(oldVarName, [ newVarName ]) {
+    action_cloneVar([ oldVarName, newVarName ]) {
         this.variables[newVarName] = this.variables[oldVarName];
     },
-    action_setVar(value, [ varName ]) {
+    action_setVar([ varName, value ]) {
         this.variables[varName] = value;
     },
-    action_addVar(value, [ varName ]) {
+    action_addVar([ varName, value ]) {
         if (typeof this.variables[varName] === "undefined")
-            return this.handlersMap.action_setVar(...arguments);
+            return this.handlersMap.action_setVar([varName, value]);
 
         this.variables[varName] += value;
     },
-    action_addStats(value, [ statName ]) {
+    action_addStats([ statName, value ]) {
         this.stats[statName].value += value;
     },
-    action_goto(groupKey) {
+    action_goto([ groupKey ]) {
         return this.doActionsGroupByKey(String(groupKey));
     },
     action_gotoNext() {
         return this.doNextActionsGroup();
     },
-    action_movePersonSprite(personSprite, [ x, y ]) {
-        const [ vx, vy ] = validateCoordinates(x, y);
-
-        const [ personId ] = personSprite.split(".");
-        const currentPersonObj = this.persons[personId];
-        currentPersonObj.setAnchorPosition(vx, vy);
+    action_movePersonSprite([ personSprite, x, y ]) {
+        const [vx, vy] = validateCoordinates(x, y);
+        const [personId] = personSprite.split(".");
+        this.persons[personId].setAnchorPosition(vx, vy);
     },
-    action_showPersonSprite(personSprite, [ hideAllOther = false, x = undefined, y = undefined ]) {
+    action_showPersonSprite([ personSprite, hideAllOther = false, x = undefined, y = undefined ]) {
         if (!personSprite) {
             if (hideAllOther)
                 this.activePersons.forEach(person => person.hide());
@@ -55,7 +52,7 @@ const createHandlersMap = () => ({
             return;
         }
 
-        const [ personId, personSpriteId = "default" ] = personSprite.split(".");
+        const [personId, personSpriteId = "default"] = personSprite.split(".");
         const currentPersonObj = this.persons[personId];
 
         if (hideAllOther)
@@ -64,7 +61,7 @@ const createHandlersMap = () => ({
                     person.hide();
 
         if (x !== undefined && y !== undefined) {
-            const [ vx, vy ] = validateCoordinates(x, y);
+            const [vx, vy] = validateCoordinates(x, y);
             currentPersonObj.setAnchorPosition(vx, vy);
         }
 
@@ -73,19 +70,17 @@ const createHandlersMap = () => ({
 
         return currentPersonObj;
     },
-    action_showChoice(variants, [ choiceKey, hideAllOther = true ]) {
-        this.handlersMap.action_showChoicePerson(variants, [choiceKey, null, null, hideAllOther]);
+    _showDialog({ text, author }) {
+        this.templateWrappers.choices?.classList.remove("active");
+        this.templateWrappers.dialog?.classList.add("active");
+        this.templates.dialog?.render({ text, author });
     },
-    action_showChoicePerson(variants, [ choiceKey, personSprite, pseudoName, hideAllOther = true ]) {
+    _showChoices({ choiceKey, text, author, choices }) {
         this.needClickButton = true;
         this.templateWrappers.choices?.classList.add("active");
         this.templateWrappers.dialog?.classList.remove("active");
 
-        const personObj = this.handlersMap.action_showPersonSprite(personSprite, [ hideAllOther ]);
-        const author = pseudoName ?? personObj?.name ?? "...";
-        const text = variants[0];
-
-        const choicesList = variants.slice(1).map(variant => ({
+        const choicesList = choices.map(variant => ({
             "event-choice-id": choiceKey,
             "event-choice-variant": variant,
             "content": variant,
@@ -93,19 +88,31 @@ const createHandlersMap = () => ({
 
         this.templates.choices?.render({ author, text, choicesList });
     },
-    action_showPhrase(text, [ hideAllOther = true ]) {
-        this.handlersMap.action_showPhrasePerson(text, [null, null, hideAllOther]);
+    action_showChoice([ choiceKey, text, ...choices ]) {
+        this.handlersMap.action_showChoicePerson([ choiceKey, null, text, ...choices ]);
     },
-    action_showPhrasePerson(text, [ personSprite, pseudoName, hideAllOther = true ]) {
-        this.templateWrappers.choices?.classList.remove("active");
-        this.templateWrappers.dialog?.classList.add("active");
+    action_showChoicePerson([ choiceKey, personSprite, text, ...choices ]) {
+        let hideAllOther = true;
 
-        const personObj = this.handlersMap.action_showPersonSprite(personSprite, [ hideAllOther ]);
+        if (choices.length > 0 && (choices[choices.length - 1] === true || choices[choices.length - 1] === false)) {
+            hideAllOther = choices.pop();
+        }
+
+        const personObj = this.handlersMap.action_showPersonSprite([personSprite, hideAllOther]);
+        const author = personObj?.name ?? "...";
+
+        this.handlersMap._showChoices({ choiceKey, text, author, choices });
+    },
+    action_showPhrase([ text ]) {
+        this.handlersMap.action_showPhrasePerson([ null, null, text ]);
+    },
+    action_showPhrasePerson([ personSprite, pseudoName = null, text, hideAllOther = true ]) {
+        const personObj = this.handlersMap.action_showPersonSprite([personSprite, hideAllOther]);
         const author = pseudoName ?? personObj?.name ?? "...";
 
-        this.templates.dialog?.render({ text, author });
+        this.handlersMap._showDialog({ text, author });
     },
-    action_showTitle(title) {
+    action_showTitle([ title ]) {
         return new Promise(r => {
             this.templateWrappers.sceneTitle?.classList.remove("inactive");
             this.templates.sceneTitle?.render({ title });
@@ -127,7 +134,7 @@ const createHandlersMap = () => ({
         this.templateWrappers.choices?.classList.remove("active");
         return this.loadSceneByKeyIndex(this.currentSceneKeyIndex + 1).then(() => this.doNextActionsGroup());
     },
-    action_gotoScene(sceneKey) {
+    action_gotoScene([ sceneKey ]) {
         return this.loadSceneByKey(sceneKey);
     },
     action_end() {

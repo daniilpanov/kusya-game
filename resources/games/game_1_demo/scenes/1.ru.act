@@ -1,14 +1,19 @@
 [0]
-setBackground = 1
-showTitle = "Первая сцена"
+setBackground(1)
+showTitle("Первая сцена")
+
 [1]
-showPhrase = "This is a demo game"
+showPhrase("This is a demo game")
+
 [2]
-movePersonSprite(0, 0) = "vi"
-showPhrasePerson(vi.default, Незнакомец) = "Где я???"
+movePersonSprite(vi, 0, 0)
+showPhrasePerson(vi.default, "Незнакомец", "Где я???")
+
 [3]
-showPhrase = "Ви огляделся"
+showPhrase("Ви огляделся")
+
 [4]
-showPhrase = "До свидания!"
+showPhrase("До свидания!")
+
 [5]
-gotoNextScene =
+gotoNextScene()
