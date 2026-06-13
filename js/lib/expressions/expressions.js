@@ -26,8 +26,11 @@ class ExpressionsParser {
     setExpression(expression) { this.expression = expression; }
 
     evaluate(expression = undefined) {
-        if (expression)
+        if (expression !== undefined)
             this.setExpression(expression);
+
+        if (typeof this.expression !== 'string' || this.expression === '')
+            return this.lastValue = this.expression;
 
         this._tokens = this.tokenize();
         this._index = 0;
@@ -175,6 +178,10 @@ class ExpressionsParser {
 
         if (this.check(TOKEN_TYPE_IDENTIFIER)) {
             const token = this.advance();
+            if (token.value === 'true')
+                return { type: TOKEN_TYPE_LITERAL, value: true };
+            if (token.value === 'false')
+                return { type: TOKEN_TYPE_LITERAL, value: false };
             return { type: TOKEN_TYPE_VARIABLE, name: token.value };
         }
 
