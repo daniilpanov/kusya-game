@@ -1,19 +1,109 @@
 [0]
 setBackground(1)
-showTitle("Первая сцена")
+showTitle("Сон математика")
 
 [1]
-showPhrase("This is a demo game")
+showPhrase("Ви приснился кошмар: огромная доска, полная цифр")
+movePersonSprite(vi, 0, 1)
 
 [2]
-movePersonSprite(vi, 0, 0)
-showPhrasePerson(vi.default, "Незнакомец", "Где я???")
+showPhrasePerson(vi.default, "Голос", "Реши три примера и проснёшься!")
 
 [3]
-showPhrase("Ви огляделся")
+setVar(score, 0)
 
 [4]
-showPhrase("До свидания!")
+showChoice(ans1, "Сколько будет 2 + 2?", "3", "100", "4")
 
 [5]
+if(ans1 == "4"): 6
+if(ans1 != "4"): 8
+
+[6]
+setVar(score, score + 1)
+showPhrasePerson(vi.smile, null, "Легкотня!")
+
+[7]
+goto(9)
+
+[8]
+showPhrasePerson(vi.default, null, "Эх...")
+
+[9]
+showChoice(ans2, "Сколько будет 2 ** 3?", "6", "8", "9")
+
+[10]
+if(ans2 == "8"): 11
+if(ans2 != "8"): 13
+
+[11]
+setVar(score, score + 2)
+showPhrasePerson(vi.smile, null, "Степень — моё второе имя!")
+
+[12]
+goto(14)
+
+[13]
+showPhrasePerson(vi.default, null, "Ну как так...")
+
+[14]
+showChoice(ans3, "Сколько будет 10 - 3 * 2?", "14", "4", "7")
+
+[15]
+if(ans3 == "4"): 16
+if(ans3 != "4"): 18
+
+[16]
+setVar(score, score + 3)
+showPhrasePerson(vi.smile, null, "Приоритет операций рулит!")
+
+[17]
+goto(19)
+
+[18]
+showPhrasePerson(vi.default, null, "Блин...")
+
+[19]
+// score > 5 — всё верно (1+2+3 = 6)
+if(score > 5): 20
+// score > 2 && score <= 5 — частично верно
+if(score > 2 && score <= 5): 24
+// !(score > 2) — полный провал (score <= 2)
+if(!(score > 2)): 27
+
+[20]
+showPhrasePerson(vi.default, "Голос", "Идеально! Все ответы верны!")
+setVar(bonus, score ** 2)
+
+[21]
+showPhrasePerson(vi.default, "Голос", "Твой бонус: {bonus} баллов!")
+addStats(alive, bonus)
+
+[22]
+showPhrasePerson(vi.smile, null, "Я лучший!")
+
+[23]
+gotoNextScene()
+
+[24]
+showPhrasePerson(vi.default, "Голос", "Неплохо, но можно лучше!")
+
+[25]
+showPhrasePerson(vi.default, "Голос", "Твоя живучесть повышается")
+addStats(alive, 1)
+
+[26]
+gotoNextScene()
+
+[27]
+showPhrasePerson(vi.default, "Голос", "Полный провал...")
+
+[28]
+showPhrasePerson(vi.default, null, "Я ничтожество...")
+
+[29]
+addStats(alive, -1)
+showPhrase("Голос исчез. Ви остался один в темноте...")
+
+[30]
 gotoNextScene()

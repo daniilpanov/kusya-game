@@ -1,44 +1,40 @@
 [0]
 setBackground(2)
-showTitle("Вторая сцена")
+showTitle("Пробуждение")
 
 [1]
-showPhrase("This is a demo game")
+showPhrase("Ви проснулся в холодном поту")
 
 [2]
-showPhrasePerson(vi.smile, null, "А тут красиво")
+showPhrasePerson(vi.default, null, "Фух... Это был всего лишь сон")
 
 [3]
-movePersonSprite(vi, 1, 0)
-showChoicePerson(nextDoing, vi.smile, "Что Ви сделал дальше?", "Отвернулся", "Продолжил смотреть")
+// Проверка накопленной живучести
+if(stats.alive > 5): 4
+if(!(stats.alive > 5) && stats.alive > 0): 6
+if(stats.alive <= 0): 9
 
 [4]
-if(nextDoing == "Отвернулся"): 7
-if(nextDoing == "Продолжил смотреть"): 5
+showPhrase("Отличный сон! Ви чувствует небывалый прилив сил")
+showPhrasePerson(vi.smile, null, "Математика — это весело!")
 
 [5]
-showPhrase("Вы умерли")
+end()
 
 [6]
-setVar(died, 1)
-goto(2)
+showPhrase("Неплохой сон. Ви чувствует себя нормально")
 
 [7]
-showPhrase("Из темноты показался монстр...")
+showPhrasePerson(vi.default, null, "Надо подтянуть математику...")
 
 [8]
-showPhrasePerson(vi.default, null, "Ё моё")
-if(died): 10
+end()
 
 [9]
-addStats(alive, 1)
-gotoNext()
+showPhrase("Кошмар вымотал Ви. Он чувствует себя ужасно")
 
 [10]
-if(!stats.alive): 12
+showPhrasePerson(vi.default, null, "Ненавижу цифры...")
 
 [11]
-showPhrasePerson(vi.smile, null, "Я крут!")
-
-[12]
 end()
