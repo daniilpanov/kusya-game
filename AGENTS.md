@@ -23,7 +23,7 @@ js/
     ├── toml/toml.js               — вендорная либа (глобаль toml, классический скрипт)
     └── typer/typer.js             — печатающийся текст
 package.json         — {"type":"module"} + алиасы "#/*" для Node
-js/tests/            — интеграционные тесты
+js/tests/            — интеграционные и рантайм-тесты
 run-tests.sh         — запуск всех тестов
 ```
 
@@ -45,6 +45,18 @@ import { ActParser } from '#/lib/act/act-parser.js';
 Порядок side-effect'ов гарантируется порядком импортов: `game.js` импортирует `Templater`, затем `templater_typer_extension.js`, который регистрирует typer-хендлер.
 
 Работа через `file://` не поддерживается (CORS у модулей) — только через сервер (см. «Запуск»).
+
+---
+
+## Исполнение сцен и ошибки
+
+Модель исполнения: группы — строго последовательно, ноды внутри группы — параллельно (`Promise.allSettled`).
+
+Политика ошибок:
+- **Упавшая нода не мешает соседним**: исключение (sync или async) изолируется, репортится через `onActionError({ sceneKey, groupKey, action, error })` (дефолт — `console.error` с контекстом), группа завершается, игра продолжается.
+- **Фатальные ошибки загрузки** (descriptor.toml, шаблоны, .act-файл, HTTP != 200) — оверлей `showFatalError()` поверх игры + кнопка «В меню»; страховка — обработчик `unhandledrejection` в game.html.
+- Все игровые ресурсы грузятся через `Utils.fetch` (проверяет `response.ok`).
+- Хендлеры бросают понятные ошибки вместо TypeError: `Person "x" not found`, `Sprite "y" not found for person "x"`, `Background "x" not found`, `Stat "x" not found`, `Unknown action "x"`.
 
 ---
 
@@ -136,7 +148,8 @@ const result = parser.evaluate(); // число, строка или boolean
 ./run-tests.sh                             # все тесты сразу
 node js/lib/act/act-parser.test.js         # ActParser
 node js/lib/expressions/expressions.test.js # Expressions
-node js/tests/integration.test.js          # интеграционные
+node js/tests/integration.test.js           # интеграционные
+node js/tests/runtime-errors.test.js        # изоляция упавших нод, guards
 ```
 
 При добавлении фичи: обновить парсер/движок → добавить тесты → `./run-tests.sh`.
