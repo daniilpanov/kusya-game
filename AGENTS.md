@@ -15,14 +15,36 @@ js/
 ├── scene.js        — SceneController: загрузка action-групп из .act
 ├── actions.js      — createHandlersMap(): все обработчики экшнов
 ├── person.js       — PersonController: спрайты персонажей
+├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/
     ├── act/act-parser.js          — ActParser: парсер .act-файлов
     ├── expressions/expressions.js — ExpressionsParser: парсер и вычисление выражений
     ├── templater/templater.js     — HTML-шаблонизатор
+    ├── toml/toml.js               — вендорная либа (глобаль toml, классический скрипт)
     └── typer/typer.js             — печатающийся текст
+package.json         — {"type":"module"} + алиасы "#/*" для Node
 js/tests/            — интеграционные тесты
 run-tests.sh         — запуск всех тестов
 ```
+
+---
+
+## Модули и импорты
+
+Весь JS — ES-модули. Алиас `#/` указывает на `./js/`:
+- в браузере — через `<script type="importmap">` в index.html/game.html;
+- в Node (тесты) — через `"imports"` в package.json.
+
+```js
+import { Game } from '#/game.js';
+import { ActParser } from '#/lib/act/act-parser.js';
+```
+
+Исключение — `js/lib/toml/toml.js`: вендорная библиотека подключается классическим скриптом и даёт глобаль `toml` (используется в `Utils.fetchTOML`).
+
+Порядок side-effect'ов гарантируется порядком импортов: `game.js` импортирует `Templater`, затем `templater_typer_extension.js`, который регистрирует typer-хендлер.
+
+Работа через `file://` не поддерживается (CORS у модулей) — только через сервер (см. «Запуск»).
 
 ---
 
@@ -118,6 +140,12 @@ node js/tests/integration.test.js          # интеграционные
 ```
 
 При добавлении фичи: обновить парсер/движок → добавить тесты → `./run-tests.sh`.
+
+---
+
+## Коммиты
+
+Формат: `<scope>: <краткое описание в нижнем регистре>`, scope — путь или компонент (`js/lib/act:`, `js/scene:`, `resources/games/demo:`). Тесты кладутся вместе с фичей одним коммитом.
 
 ---
 
