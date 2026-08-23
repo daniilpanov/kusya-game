@@ -1,176 +1,146 @@
 # Kusya Novell Platform
 
-## Описание
-Платформа для разработки и хостинга визуальных новелл. Состоит из клиентского SPA на чистом JS и серверного API на PHP.
+Платформа для разработки и хостинга визуальных новелл. Клиент — vanilla JS, сервер — PHP 8.2.
 
 ---
 
-## Архитектура
-
-### Frontend (vanilla JS, без фреймворков)
+## Архитектура (Frontend)
 
 ```
-index.html          — Главная страница (список игр)
-game.html           — Страница игры (рендер сцены)
-css/
-├── style.css       — Базовые стили, кнопки, модалки, адаптив
-├── app.css         — Стили для главной страницы
-└── game.css        — Стили для игрового экрана (фон, персонажи, диалоги, выборы)
+index.html / game.html — главная страница / страница игры
+css/  — style.css (общие), app.css (главная), game.css (игровой экран)
 js/
-├── app.js          — NovelPlatformApp: загрузка и отображение списка игр
-├── game.js         — Game: ядро игры, загрузка дескриптора, управление сценами
-├── scene.js        — SceneController: парсинг action-групп из .act-файлов
+├── app.js          — NovelPlatformApp: список игр (GET /api/games)
+├── game.js         — Game: ядро, загрузка descriptor.toml, управление сценами
+├── scene.js        — SceneController: загрузка action-групп из .act
 ├── actions.js      — createHandlersMap(): все обработчики экшнов
-├── person.js       — PersonController: управление спрайтами персонажа
-├── utils.js        — Utils: fetch, loadImage, fadeIn/Out, typeText, etc.
-├── templater_typer_extension.js — интеграция Templater + Typer
+├── person.js       — PersonController: спрайты персонажей
 └── lib/
-    ├── toml/toml.js          — TOML-парсер
-    ├── templater/templater.js — Templater: инъекция данных в HTML-шаблоны
-    ├── typer/typer.js         — TextTyper: печатающийся текст
-    └── expressions/expressions.js — ExpressionsParser: парсер и evaluation условий
-```
-
-### Backend (PHP 8.2)
-
-```
-api/
-└── games.php       — GET /api/games — сканирует resources/games/*/config/info.json
-php/
-├── Dockerfile      — php:8.2-apache + pdo_mysql + mod_rewrite
-└── config/php.ini  — PHP-конфигурация
-apache/
-└── 000-default.conf — VirtualHost конфиг
-.htaccess           — Rewrite rules (API routes)
-```
-
-### Игровые ресурсы
-
-```
-resources/games/
-└── game_1_demo/
-    ├── config/
-    │   ├── descriptor.toml  — Мета-описание игры: сцены, фоны, персонажи, шаблоны
-    │   └── info.json        — Название, описание, язык
-    ├── scenes/
-    │   ├── 1.ru.act         — Сцена 1 (action-группы в TOML)
-    │   └── 2.ru.act         — Сцена 2
-    ├── bg/                  — Фоновые изображения
-    ├── sprites/             — Спрайты персонажей
-    ├── styles.css           — Стили игры
-    ├── dialog_template.html
-    ├── choices_template.html
-    └── scene_title_template.html
+    ├── act/act-parser.js          — ActParser: парсер .act-файлов
+    ├── expressions/expressions.js — ExpressionsParser: парсер и вычисление выражений
+    ├── templater/templater.js     — HTML-шаблонизатор
+    └── typer/typer.js             — печатающийся текст
+js/tests/            — интеграционные тесты
+run-tests.sh         — запуск всех тестов
 ```
 
 ---
 
-## Как это работает
+## .act файлы (синтаксис)
 
-1. **index.html** → `NovelPlatformApp.init()` → GET `/api/games` → рендер карточек игр
-2. Клик "Начать игру" → редирект на `game.html?game_resource=...&game_descriptor_uri=...`
-3. **game.html** → `Game.init()`:
-   - Загружает `descriptor.toml` (статы, шаблоны, фоны, персонажи, сцены)
-   - Прелоадит изображения
-   - Создаёт `PersonController` для каждого персонажа
-   - Загружает первую сцену (через `SceneController`)
-4. **SceneController** парсит `.act`-файл (TOML) в группы экшнов
-5. Каждая группа экшнов выполняется последовательно через `Game.handleAction()`
-6. Экшны: `setBackground`, `showPhrase`, `showChoice`, `showTitle`, `goto`, `if`, `setVar`, `addStats`, `movePersonSprite`, `gotoNextScene`, `end` и др.
+Группы экшнов с метками. Аргументы — через запятую; строки в кавычках; `true`, `false`, `null` распознаются; числа парсятся; всё остальное — сырые строки (выражения).
 
-### Формат .act-файлов (action-группы)
-
-```toml
+```act
 [0]
-setBackground = 1
-showTitle = "Первая сцена"
+setBackground(1)
+showTitle("Первая сцена")
+
 [1]
-showPhrase(vi.default, Незнакомец) = "Где я???"
+movePersonSprite(vi, 0, 0)
+showPhrasePerson(vi.default, "Голос", "Где я???")
+
 [2]
-showChoice(nextDoing, vi.smile) = [ "Вопрос", "Вариант 1", "Вариант 2" ]
+showChoice(ans1, "Сколько будет 2 + 2?", "3", "4", "5")
+
 [3]
-if(nextDoing == "Вариант 1") = 7
+if(ans1 == "4"): 4
+if(ans1 != "4"): 5
+
+[4]
+setVar(score, score + 1)
+setVar(bonus, score ** 2)
+addStats(alive, bonus)
+gotoNextScene()
+
+[5]
+end()
 ```
+
+Условный переход: `if(выражение): метка` — `выражение` вычисляется через `ExpressionsParser`.
+
+---
+
+## Action handlers (`js/actions.js`)
+
+```js
+action_setBackground([ bgKey ])
+action_showTitle([ title ])              // тайтл на 5 сек, затем gotoNext
+action_showPhrase([ text ])              // делегирует showPhrasePerson с personSprite=null
+action_showPhrasePerson([ personSprite, pseudoName?, text, hideAllOther? ])
+action_showChoice([ choiceKey, text, ...choices ])   // делегирует showChoicePerson
+action_showChoicePerson([ choiceKey, personSprite, text, ...choices ])
+action_if([ condition, target ])         // evaluate(condition) → if truthy, goto(target)
+action_goto([ groupKey ]) / action_gotoNext()
+action_gotoNextScene()
+action_setVar([ varName, value ])        // value вычисляется как выражение
+action_addVar([ varName, value ])        // value вычисляется как выражение
+action_addStats([ statName, value ])     // value вычисляется как выражение
+action_movePersonSprite([ personSprite, x, y ])
+action_showPersonSprite([ personSprite, hideAllOther?, x?, y? ])
+action_end()                             // редирект на главную
+```
+
+Все хендлеры получают плоский массив аргументов (деструктуризация). `_showDialog` и `_showChoices` — внутренние helpers для рендера UI.
+
+---
+
+## Expressions (`js/lib/expressions/expressions.js`)
+
+Операторы (приоритет сверху вниз):
+- Унарные: `!` `-`
+- Экспонента: `**` `^`
+- Мультипликативные: `*` `/`
+- Аддитивные: `+` `-` (конкатенация строк, если хоть один операнд — строка)
+- Сравнения: `==` `!=` `<` `>` `<=` `>=`
+- Логические: `&&` `||`
+
+Литералы: числа, строки в кавычках (`"abc"`, `'abc'`), `true`, `false`, `null`.
+
+Контекст (в `Game`): переменные `this.variables[name]`, статы `this.stats[name].value` через `stats.имя`.
+
+```js
+const parser = new ExpressionsParser({
+    expression: "x + y * 2 > 10",
+    getFromContextCallback: name => context[name],
+});
+const result = parser.evaluate(); // число, строка или boolean
+```
+
+---
+
+## Тесты
+
+```bash
+./run-tests.sh                             # все тесты сразу
+node js/lib/act/act-parser.test.js         # ActParser
+node js/lib/expressions/expressions.test.js # Expressions
+node js/tests/integration.test.js          # интеграционные
+```
+
+При добавлении фичи: обновить парсер/движок → добавить тесты → `./run-tests.sh`.
+
+---
+
+## Игровые ресурсы
+
+```
+resources/games/<game_id>/
+├── config/
+│   ├── descriptor.toml  — мета-описание (сцены, фоны, персонажи, шаблоны, статы)
+│   └── info.json        — название, описание, язык
+├── scenes/*.ru.act       — сцены
+├── bg/                   — фоны
+├── sprites/              — спрайты
+└── *.html                — шаблоны (dialog, choices, sceneTitle)
+```
+
+`setVar` и `addStats` вычисляют значение-аргумент через `ExpressionsParser`, поэтому можно писать `setVar(score, score + 1)` или `addStats(alive, bonus)`.
 
 ---
 
 ## Запуск
 
-### Через Docker (рекомендуется)
-
 ```bash
-docker compose up -d
-```
-
-Сайт будет доступен на http://localhost:8080
-
-### Вручную (без Docker)
-
-Любой HTTP-сервер с корнем в директории проекта, например:
-
-```bash
-php -S localhost:8080
-```
-
-PHP нужен только для API (`/api/games`). Если API не требуется, можно использовать любой статический сервер.
-
----
-
-## БД (не подключена)
-
-В `.env` определены параметры MySQL, в `php/Dockerfile` установлен `pdo_mysql`. На данный момент API работает без БД — сканирует файловую систему. Подключение БД предусмотрено для будущих механик (сохранения, пользователи).
-
----
-
-## Ветки
-
-- `master` — основная разработка
-- `release-1.0-demo` — первый стабильный релиз
-- `release-1.1-forrest-game` — вторая игра (Forrest)
-- `feature/tiny-interpreter` — экспериментальный интерпретатор
-
----
-
-## Зависимости (Frontend)
-
-Библиотеки написаны вручную (vendored), внешних зависимостей нет:
-- `lib/toml/toml.js` — TOML-парсер
-- `lib/templater/templater.js` — HTML-шаблонизатор
-- `lib/typer/typer.js` — печатающийся текст
-- `lib/expressions/expressions.js` — парсер условных выражений
-
-Стили: `css/style.css` (общие), `css/app.css` (главная), `css/game.css` (игра).
-Стили конкретной игры: `resources/games/*/styles.css`.
-
----
-
-## Конфигурация игры (descriptor.toml)
-
-```toml
-[templates]
-styles = "styles.css"
-dialog = "dialog_template.html"
-choices = "choices_template.html"
-sceneTitle = "scene_title_template.html"
-
-[scenes]
-[scenes.1]
-RU = "scenes/1.ru.act"
-
-[backgrounds]
-[backgrounds.1]
-src = "bg/bg1.png"
-position = "static"
-
-[stats]
-[stats.alive]
-name = "Живость"
-description = "..."
-
-[persons]
-[persons.vi]
-name = "Vi"
-[persons.vi.sprites]
-default = "sprites/vi/def.png"
-smile = "sprites/vi/smile.png"
+docker compose up -d       # http://localhost:8080
+php -S localhost:8080      # без Docker (API работает, БД не нужна)
 ```

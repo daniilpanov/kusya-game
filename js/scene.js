@@ -1,39 +1,36 @@
 class SceneController {
-    currentActionsGroupKeyIndex = -1;
+    currentActionsGroupIndex = -1;
 
-    constructor(sceneKey, descriptor, actionsHandler) {
+    constructor(sceneKey, content, actionsHandler) {
         this.sceneKey = sceneKey;
         this.actionsHandler = actionsHandler;
 
-        const descriptorObject = toml.parse(descriptor);
-        this.groupsKeys = Object.keys(descriptorObject).sort((a, b) => Number(a) - Number(b));
-        this.groups = this.groupsKeys.map(groupKey => parseGroup(descriptorObject[groupKey]));
+        const parser = new ActParser({ content });
+        const parsed = parser.parse();
+        this.groups = parsed.groups;
+        this.groupIndexMap = parser.groupIndexMap;
     }
 
     doNextActionsGroup() {
-        return this.doActionsGroup(this.currentActionsGroupKeyIndex + 1);
+        return this.doActionsGroup(this.currentActionsGroupIndex + 1);
     }
 
-    doActionsGroup(keyIdx) {
-        this.currentActionsGroupKeyIndex = keyIdx;
-        return this._doActionsGroup(this.groupsKeys[keyIdx]);
+    doActionsGroup(index) {
+        if (index < 0 || index >= this.groups.length) return;
+        this.currentActionsGroupIndex = index;
+        return this._doActionsGroup(index);
     }
 
     doActionsGroupByKey(key) {
-        this.currentActionsGroupKeyIndex = this.groupsKeys.indexOf(key);
-        return this._doActionsGroup(key);
+        const index = this.groupIndexMap[String(key)];
+        if (index === undefined)
+            throw new Error(`Group "${key}" not found`);
+        return this.doActionsGroup(index);
     }
 
-    _doActionsGroup(key) {
-        return Promise.allSettled(this.groups[key].map(this.actionsHandler).filter(i => i instanceof Promise));
+    _doActionsGroup(index) {
+        return Promise.allSettled(
+            this.groups[index].actions.map(this.actionsHandler).filter(i => i instanceof Promise)
+        );
     }
-}
-
-const parseGroup = group => Object.keys(group).map(key => parseAction(key, group[key]));
-
-function parseAction(key, mainArg) {
-    const [ actionKey, stringArgs ] = key.split("(", 2);
-    const args = stringArgs?.slice(0, -1).split(",").map(arg => arg.trim()) || [];
-
-    return { actionKey, mainArg, args };
 }

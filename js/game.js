@@ -141,8 +141,8 @@ class Game {
         );
     }
 
-    handleAction({ actionKey, mainArg, args }) {
-        return this.handlersMap[`action_${actionKey}`](mainArg, args);
+    handleAction({ name, args }) {
+        return this.handlersMap[`action_${name}`](args);
     }
 
     _isActiveBackgroundProcesses() {
