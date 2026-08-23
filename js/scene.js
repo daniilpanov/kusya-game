@@ -3,9 +3,10 @@ import { ActParser } from '#/lib/act/act-parser.js';
 export class SceneController {
     currentActionsGroupIndex = -1;
 
-    constructor(sceneKey, content, actionsHandler) {
+    constructor(sceneKey, content, actionsHandler, onActionError = undefined) {
         this.sceneKey = sceneKey;
         this.actionsHandler = actionsHandler;
+        this.onActionError = onActionError || this._defaultActionErrorHandler;
 
         const parser = new ActParser({ content });
         const parsed = parser.parse();
@@ -31,8 +32,25 @@ export class SceneController {
     }
 
     _doActionsGroup(index) {
+        const group = this.groups[index];
+
+        // Groups run strictly sequentially; nodes within a group run in parallel.
+        // A failed node does not affect its siblings: its error is isolated and reported via onActionError.
         return Promise.allSettled(
-            this.groups[index].actions.map(this.actionsHandler).filter(i => i instanceof Promise)
+            group.actions.map(action =>
+                Promise.resolve()
+                    .then(() => this.actionsHandler(action))
+                    .catch(error => this.onActionError({
+                        sceneKey: this.sceneKey,
+                        groupKey: group.key,
+                        action,
+                        error,
+                    }))
+            )
         );
+    }
+
+    _defaultActionErrorHandler({ sceneKey, groupKey, action, error }) {
+        console.error(`[scene "${sceneKey}"] action "${action.name}" (group [${groupKey}]) failed:`, error);
     }
 }
