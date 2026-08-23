@@ -1,6 +1,6 @@
-const { strict: assert } = require('assert');
-const { ActParser } = require('./act-parser');
-const { ExpressionsParser } = require('../expressions/expressions');
+import { strict as assert } from 'assert';
+import { ActParser } from '#/lib/act/act-parser.js';
+import { ExpressionsParser } from '#/lib/expressions/expressions.js';
 
 const parse = content => (new ActParser({ content })).parse();
 

@@ -1,4 +1,4 @@
-class ActParser {
+export class ActParser {
     constructor({ content, generator } = {}) {
         this.content = content;
         this.generator = generator;
@@ -193,6 +193,3 @@ class ActParser {
         return value;
     }
 }
-
-if (typeof module !== 'undefined' && module.exports)
-    module.exports = { ActParser };

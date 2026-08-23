@@ -1,4 +1,6 @@
-class NovelPlatformApp {
+import { Utils } from '#/utils.js';
+
+export class NovelPlatformApp {
     lang = "RU";
 
     constructor() {

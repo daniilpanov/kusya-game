@@ -1,4 +1,6 @@
-class Utils {
+import { TextTyper } from '#/lib/typer/typer.js';
+
+export class Utils {
     // Асинхронный запрос с обработкой ошибок
     static async fetch(url, options = {}) {
         const config = {
@@ -30,6 +32,7 @@ class Utils {
     }
 
     static async fetchTOML(url, options = {}) {
+        // toml is a global from the vendored js/lib/toml/toml.js (loaded as a classic script)
         return toml.parse(await (await this.fetch(url, options)).text());
     }
 

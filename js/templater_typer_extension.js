@@ -1,6 +1,9 @@
 // Extend templater with typer
 
-class TemplaterTyperExtension {
+import { Templater } from '#/lib/templater/templater.js';
+import { TextTyper } from '#/lib/typer/typer.js';
+
+export class TemplaterTyperExtension {
     static delay = 100;
     static currentTypers = [];
 

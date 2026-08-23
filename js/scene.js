@@ -1,4 +1,6 @@
-class SceneController {
+import { ActParser } from '#/lib/act/act-parser.js';
+
+export class SceneController {
     currentActionsGroupIndex = -1;
 
     constructor(sceneKey, content, actionsHandler) {
