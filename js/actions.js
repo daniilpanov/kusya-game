@@ -26,7 +26,7 @@ const createHandlersMap = () => ({
         this.variables[varName] = value;
     },
     action_addVar(value, [ varName ]) {
-        if (this.variables[varName] === "undefined")
+        if (typeof this.variables[varName] === "undefined")
             return this.handlersMap.action_setVar(...arguments);
 
         this.variables[varName] += value;
