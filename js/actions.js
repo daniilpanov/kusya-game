@@ -22,16 +22,16 @@ const createHandlersMap = () => ({
         this.variables[newVarName] = this.variables[oldVarName];
     },
     action_setVar([ varName, value ]) {
-        this.variables[varName] = value;
+        this.variables[varName] = this.expressionsParser.evaluate(value);
     },
     action_addVar([ varName, value ]) {
         if (typeof this.variables[varName] === "undefined")
             return this.handlersMap.action_setVar([varName, value]);
 
-        this.variables[varName] += value;
+        this.variables[varName] += this.expressionsParser.evaluate(value);
     },
     action_addStats([ statName, value ]) {
-        this.stats[statName].value += value;
+        this.stats[statName].value += this.expressionsParser.evaluate(value);
     },
     action_goto([ groupKey ]) {
         return this.doActionsGroupByKey(String(groupKey));
