@@ -1,5 +1,8 @@
 import { strict as assert } from 'assert';
 import { SceneController } from '#/scene.js';
+import { createHandlersMap } from '#/actions.js';
+import { PersonController } from '#/person.js';
+import { Game } from '#/game.js';
 
 const makeController = (content, actionsHandler, onActionError = undefined) =>
     new SceneController('test-scene', content, actionsHandler, onActionError);
@@ -131,6 +134,57 @@ const makeController = (content, actionsHandler, onActionError = undefined) =>
     assert.equal(errors.length, 1);
     assert.equal(errors[0].groupKey, 'target');
     assert.equal(errors[0].action.name, 'exploding');
+}
+
+// --- Handler guards produce descriptive errors instead of TypeErrors ---
+
+{
+    const handlers = createHandlersMap();
+    const gameStub = {
+        backgrounds: {},
+        persons: {},
+        stats: {},
+        variables: {},
+        expressionsParser: { evaluate: value => value },
+        bgWrapper: { innerHTML: '', appendChild() {} },
+    };
+
+    assert.throws(
+        () => handlers.action_setBackground.call(gameStub, ['unknown']),
+        /Background "unknown" not found/
+    );
+
+    assert.throws(
+        () => handlers.action_showPersonSprite.call(gameStub, ['vi.default']),
+        /Person "vi" not found/
+    );
+
+    assert.throws(
+        () => handlers.action_movePersonSprite.call(gameStub, ['vi.default', 0.5, 0.5]),
+        /Person "vi" not found/
+    );
+
+    assert.throws(
+        () => handlers.action_addStats.call(gameStub, ['alive', 1]),
+        /Stat "alive" not found/
+    );
+}
+
+// --- PersonController.show guard ---
+
+{
+    const person = new PersonController('Vi', {});
+    assert.throws(() => person.show('smile'), /Sprite "smile" not found for person "Vi"/);
+}
+
+// --- Unknown action guard in Game.handleAction ---
+
+{
+    const gameLike = { handlersMap: {} };
+    assert.throws(
+        () => Game.prototype.handleAction.call(gameLike, { name: 'nope', args: [] }),
+        /Unknown action "nope"/
+    );
 }
 
 console.log('All runtime error tests passed!');

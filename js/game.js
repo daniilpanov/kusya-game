@@ -150,7 +150,12 @@ export class Game {
     }
 
     handleAction({ name, args }) {
-        return this.handlersMap[`action_${name}`](args);
+        const handler = this.handlersMap[`action_${name}`];
+
+        if (!handler)
+            throw new Error(`Unknown action "${name}"`);
+
+        return handler(args);
     }
 
     _isActiveBackgroundProcesses() {
