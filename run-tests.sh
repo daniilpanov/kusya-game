@@ -17,6 +17,11 @@ echo "Running js/lib/act/act-parser.test.js..."
 node js/lib/act/act-parser.test.js
 echo -e "${GREEN}✓ ActParser tests passed!${NC}"
 
+echo -e "${YELLOW}Running ActSerializer tests...${NC}"
+echo "Running js/lib/act/act-serializer.test.js..."
+node js/lib/act/act-serializer.test.js
+echo -e "${GREEN}✓ ActSerializer tests passed!${NC}"
+
 echo -e "${YELLOW}Running expressions tests...${NC}"
 echo "Running js/lib/expressions/expressions.test.js..."
 node js/lib/expressions/expressions.test.js
