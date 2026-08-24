@@ -332,4 +332,14 @@ const evaluate = expr => new ExpressionsParser({
     assert.equal(args[1], 'target');
 }
 
+{
+    // static parseArgs: shared tokenization for the scene editor
+    assert.deepEqual(ActParser.parseArgs('vi.default, "text, with comma", 42'),
+        ['vi.default', 'text, with comma', 42]);
+    assert.deepEqual(ActParser.parseArgs("'q(\"x\")', (a + b) * 2"),
+        ['q("x")', '(a + b) * 2']);
+    assert.deepEqual(ActParser.parseArgs(''), []);
+    assert.deepEqual(ActParser.parseArgs('true, null, 1.5'), [true, null, 1.5]);
+}
+
 console.log('All ActParser tests passed!');

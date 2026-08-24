@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Platform - Редактор сцен</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+<div class="container editor-container">
+    <header class="editor-header">
+        <div>
+            <h1>Редактор сцен</h1>
+            <a href="/" class="editor-back-link">← На главную</a>
+        </div>
+        <div class="editor-controls">
+            <select id="gameSelect" title="Игра">
+                <option value="">Загрузка игр...</option>
+            </select>
+            <select id="sceneSelect" title="Сцена" disabled>
+                <option value="">Сначала выберите игру</option>
+            </select>
+            <button id="exportBtn" disabled>Скачать .act</button>
+        </div>
+    </header>
+
+    <div id="statusBar" class="status-bar hidden"></div>
+
+    <main class="editor-layout">
+        <aside class="groups-panel">
+            <div class="panel-title">Группы
+                <button id="addGroupBtn" disabled>+ Группа</button>
+            </div>
+            <ul id="groupsList"></ul>
+        </aside>
+
+        <section class="actions-panel">
+            <div class="panel-title">Экшны группы «<span id="currentGroupKey">—</span>»
+                <button id="addActionBtn" disabled>+ Экшн</button>
+            </div>
+            <div id="actionsList"></div>
+        </section>
+    </main>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "#/": "./js/"
+    }
+}
+</script>
+<script type="module" src="js/editor.js"></script>
+</body>
+</html>

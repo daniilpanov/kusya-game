@@ -139,14 +139,15 @@ export class ActParser {
                 throw new ActParseError(`Unexpected content after action: ${line}`, lineNumber);
         }
 
-        const args = this._parseArgs(argsStr);
+        const args = ActParser.parseArgs(argsStr);
         if (target !== null)
             args.push(target);
 
         return { name, args };
     }
 
-    _parseArgs(argsStr) {
+    // Tokenizes a raw argument string into values; shared with the scene editor
+    static parseArgs(argsStr) {
         const args = [];
         let current = '';
         let inString = false;
@@ -180,7 +181,7 @@ export class ActParser {
                 depth--;
                 current += ch;
             } else if (ch === ',' && depth === 0) {
-                args.push(this._parseArgValue(current.trim()));
+                args.push(ActParser._parseArgValue(current.trim()));
                 current = '';
             } else {
                 current += ch;
@@ -188,12 +189,12 @@ export class ActParser {
         }
 
         const trimmed = current.trim();
-        if (trimmed) args.push(this._parseArgValue(trimmed));
+        if (trimmed) args.push(ActParser._parseArgValue(trimmed));
 
         return args;
     }
 
-    _parseArgValue(value) {
+    static _parseArgValue(value) {
         if (value === 'true') return true;
         if (value === 'false') return false;
         if (value === 'null') return null;

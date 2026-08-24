@@ -18,6 +18,12 @@ const resolvePerson = (persons, personSprite) => {
     return [person, spriteId];
 };
 
+// Action names available to scenes ("action_" prefix and internal _helpers stripped);
+// used by the scene editor for validation
+export const getKnownActionNames = () => Object.keys(createHandlersMap())
+    .filter(key => key.startsWith("action_"))
+    .map(key => key.slice("action_".length));
+
 export const createHandlersMap = () => ({
     action_setBackground([ bgKey ]) {
         bgKey = String(bgKey);
