@@ -21,6 +21,8 @@ import { FlowGraphView } from '#/editor-graph.js';
 import { getAdapter, buildEditorContext, createStagePreview } from '#/editor-adapters.js';
 import { openModal } from '#/editor-modal.js';
 import '#/adapters/person-position.js';
+import '#/adapters/phrase.js';
+import '#/adapters/choice.js';
 
 export class ScenesEditor {
     constructor() {
@@ -471,6 +473,9 @@ export class ScenesEditor {
         const values = {};
         for (const [key, input] of Object.entries(form.inputs))
             values[key] = input.value;
+        if (form.spec?.rest && form.restContainer)
+            values[form.spec.rest.key] = [...form.restContainer.querySelectorAll('input')]
+                .map(input => input.value);
 
         let controller = null;
         const content = document.createElement('div');
@@ -480,6 +485,7 @@ export class ScenesEditor {
             container: content,
             values,
             context: this.editorContext,
+            spec: form.spec,
             makeStage: options => createStagePreview(this.editorContext, options),
             onChange: patch => Object.assign(values, patch),
         };
@@ -495,6 +501,10 @@ export class ScenesEditor {
             const patch = controller.save();
             if (!patch) return;
             for (const [key, value] of Object.entries(patch)) {
+                if (form.spec?.rest && key === form.spec.rest.key && form.setRestValues) {
+                    form.setRestValues(value); // rebuilds variant rows + applies
+                    continue;
+                }
                 const input = form.inputs[key];
                 if (input)
                     input.value = String(value);
@@ -622,13 +632,20 @@ export class ScenesEditor {
             addBtn.textContent = '+ вариант';
             addBtn.addEventListener('click', () => { addVariant(''); collectAndApply(); });
 
+            const setRestValues = newValues => {
+                restContainer.innerHTML = '';
+                for (const value of (newValues.length ? newValues : ['']))
+                    addVariant(value);
+                collectAndApply();
+            };
+
             const restBox = document.createElement('div');
             restBox.append(restLabel, restContainer, addBtn);
             fieldsBox.appendChild(restBox);
         }
 
         card.appendChild(fieldsBox);
-        this.cardForm.set(card, { spec, inputs, restContainer, collectAndApply });
+        this.cardForm.set(card, { spec, inputs, restContainer, collectAndApply, setRestValues });
         return card;
     }
 
