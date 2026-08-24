@@ -539,3 +539,20 @@ dialog.editor-modal::backdrop {
 .adapter-stage {
     align-self: center;
 }
+
+.adapter-hint {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.stage-preview .choice-btn.picked {
+    outline: 3px solid #4a7bd0;
+}
+
+.choices-container .ng--choice-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}

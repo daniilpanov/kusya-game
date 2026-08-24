@@ -3,6 +3,7 @@
 // side-effect import (same pattern as templater_typer_extension.js).
 
 import { registerAdapter, POSITION_PRESETS, clamp01, formatAnchor } from '#/editor-adapters.js';
+import { createPersonSpritePicker, createBackgroundPicker } from '#/adapters/ui.js';
 
 registerAdapter('showPersonSprite', {
     title: 'Позиция персонажа',
@@ -10,62 +11,16 @@ registerAdapter('showPersonSprite', {
     mount({ container, values, context, makeStage, onChange }) {
         const state = { ...values };
 
-        // ---- controls
-
         const controls = document.createElement('div');
         controls.className = 'adapter-controls';
 
-        const personRow = document.createElement('div');
-        personRow.className = 'field-row';
-        const personLabel = document.createElement('span');
-        personLabel.className = 'field-label';
-        personLabel.textContent = 'Персонаж:';
-        const personSelect = document.createElement('select');
-        for (const person of context?.persons ?? [])
-            personSelect.appendChild(new Option(person.name || person.id, person.id));
-        const currentPersonId = String(state.person ?? '').split('.')[0];
-        if (currentPersonId)
-            personSelect.value = currentPersonId;
-
-        const spriteRow = document.createElement('div');
-        spriteRow.className = 'field-row';
-        const spriteLabel = document.createElement('span');
-        spriteLabel.className = 'field-label';
-        spriteLabel.textContent = 'Спрайт:';
-        const spriteSelect = document.createElement('select');
-
-        const spriteThumb = document.createElement('img');
-        spriteThumb.className = 'adapter-thumb';
-        spriteThumb.alt = '';
-
-        const syncSpriteOptions = () => {
-            const person = context?.persons?.find(p => p.id === personSelect.value);
-            spriteSelect.innerHTML = '';
-            for (const sprite of person?.sprites ?? [])
-                spriteSelect.appendChild(new Option(sprite.id === 'default' ? 'default' : `${person.id}.${sprite.id}`, sprite.id));
-            const wanted = String(state.person ?? '').split('.')[1] || 'default';
-            spriteSelect.value = [...spriteSelect.options].some(o => o.value === wanted) ? wanted : '';
-            syncThumb();
-        };
-
-        const syncThumb = () => {
-            const person = context?.persons?.find(p => p.id === personSelect.value);
-            const sprite = person?.sprites?.find(s => s.id === spriteSelect.value);
-            spriteThumb.src = sprite?.url ?? '';
-            spriteThumb.classList.toggle('hidden', !sprite);
-        };
-
-        const commit = () => {
-            const personValue = spriteSelect.value
-                ? `${personSelect.value}.${spriteSelect.value}`
-                : '';
-            state.person = personValue;
-            onChange({ person: personValue });
-            redraw();
-        };
-
-        personSelect.addEventListener('change', () => { syncSpriteOptions(); commit(); });
-        spriteSelect.addEventListener('change', commit);
+        const picker = createPersonSpritePicker(context, state.person ?? '', commit);
+        const pickerRow = document.createElement('div');
+        pickerRow.className = 'field-row';
+        const pickerLabel = document.createElement('span');
+        pickerLabel.className = 'field-label';
+        pickerLabel.textContent = 'Персонаж:';
+        pickerRow.append(pickerLabel, picker.el);
 
         const presetRow = document.createElement('div');
         presetRow.className = 'adapter-presets';
@@ -95,10 +50,15 @@ registerAdapter('showPersonSprite', {
             onChange({ hideAll: state.hideAll });
         });
 
-        personRow.append(personLabel, personSelect);
-        spriteRow.append(spriteLabel, spriteSelect, spriteThumb);
         hideAllRow.append(hideAllCheck, hideAllText);
-        controls.append(personRow, spriteRow, presetRow, hideAllRow);
+        controls.append(pickerRow, presetRow, hideAllRow);
+
+        const bgPicker = createBackgroundPicker(context, index => {
+            previewBackground = context.backgrounds[index]?.url ?? null;
+            redraw();
+        });
+        if (bgPicker)
+            controls.appendChild(bgPicker);
 
         // ---- live stage
 
@@ -106,8 +66,11 @@ registerAdapter('showPersonSprite', {
         stageBox.className = 'adapter-stage';
 
         let stage = null;
+        let previewBackground = null;
+
         makeStage({ width: 560 }).then(created => {
             stage = created;
+            previewBackground = context?.backgrounds?.[0]?.url ?? null;
             stageBox.appendChild(created.root);
             redraw();
         }).catch(() => {
@@ -135,13 +98,17 @@ registerAdapter('showPersonSprite', {
             window.addEventListener('pointerup', stop);
         });
 
-        const redraw = () => {
-            if (!stage) return;
-            const person = context?.persons?.find(p => p.id === personSelect.value);
-            const sprite = person?.sprites?.find(s => s.id === spriteSelect.value);
-            const bg = context?.backgrounds?.[0];
+        function commit() {
+            state.person = picker.getValue();
+            onChange({ person: state.person });
+            redraw();
+        }
 
-            stage.setBackground(bg?.url ?? null);
+        function redraw() {
+            if (!stage) return;
+            const sprite = picker.findSprite();
+
+            stage.setBackground(previewBackground);
             stage.showSprite({
                 url: sprite?.url ?? null,
                 x: state.x !== '' && state.x != null ? Number(state.x) : 0.5,
@@ -152,13 +119,12 @@ registerAdapter('showPersonSprite', {
             else
                 stage.hideDialog();
 
-            for (const [i, btn] of [...presetRow.children].entries())
+            [...presetRow.children].forEach((btn, i) =>
                 btn.classList.toggle('active',
                     Math.abs(POSITION_PRESETS[i].x - Number(state.x)) < 0.001
-                    && Math.abs(0.5 - Number(state.y)) < 0.001);
-        };
+                    && Math.abs(0.5 - Number(state.y)) < 0.001));
+        }
 
-        syncSpriteOptions();
         container.append(controls, stageBox);
 
         return {
