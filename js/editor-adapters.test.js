@@ -46,7 +46,12 @@ import { getKnownActionNames } from '#/actions.js';
         },
         backgrounds: { 1: { src: 'bg/bg1.png' } },
         scenes: { s1: {}, s2: {} },
+        templates: { dialog: 'dialog_template.html', styles: '' },
     }, 'resources/games/game_1_demo');
+
+    assert.deepEqual(context.templates, {
+        dialog: 'resources/games/game_1_demo/dialog_template.html',
+    });
 
     assert.deepEqual(context.persons, [{
         id: 'vi',

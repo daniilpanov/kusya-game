@@ -22,6 +22,10 @@ export const ACTION_ADAPTERS = {};
 
 export const getAdapter = actionName => ACTION_ADAPTERS[actionName] ?? null;
 
+export function registerAdapter(actionName, adapter) {
+    ACTION_ADAPTERS[actionName] = adapter;
+}
+
 // ---- shared coordinate helpers (normalized anchors 0..1, see lib/layout/anchor.js)
 
 export const POSITION_PRESETS = [
@@ -44,6 +48,11 @@ export function buildEditorContext(descriptor, gameResource) {
 
     return {
         gameResource,
+        templates: listEntries(descriptor.templates).reduce((acc, [id, path]) => {
+            if (path)
+                acc[id] = assetURL(gameResource, path);
+            return acc;
+        }, {}),
         persons: listEntries(descriptor.persons).map(([id, person]) => ({
             id,
             name: person.name ?? id,

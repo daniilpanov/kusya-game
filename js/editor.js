@@ -20,6 +20,7 @@ import { buildFlowGraph, resolveEdgeAction } from '#/lib/flow/flow-graph.js';
 import { FlowGraphView } from '#/editor-graph.js';
 import { getAdapter, buildEditorContext, createStagePreview } from '#/editor-adapters.js';
 import { openModal } from '#/editor-modal.js';
+import '#/adapters/person-position.js';
 
 export class ScenesEditor {
     constructor() {

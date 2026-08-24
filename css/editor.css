@@ -489,3 +489,53 @@ dialog.editor-modal::backdrop {
     border-color: #4a7bd0;
     color: #fff;
 }
+
+/* ===== Stage preview (adapters) ===== */
+
+.stage-preview {
+    position: relative;
+    overflow: hidden;
+    background: #20242b;
+    border-radius: 8px;
+    touch-action: none;
+    flex-shrink: 0;
+}
+
+.adapter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.adapter-controls .field-label {
+    width: 90px;
+    display: inline-block;
+}
+
+.adapter-thumb {
+    height: 32px;
+    margin-left: 8px;
+    border: 1px solid #c3c9d2;
+    border-radius: 4px;
+}
+
+.adapter-presets {
+    display: flex;
+    gap: 6px;
+}
+
+.adapter-presets .mini-btn.active {
+    background: #4a7bd0;
+    color: #fff;
+    border-color: #4a7bd0;
+}
+
+.adapter-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.adapter-stage {
+    align-self: center;
+}
