@@ -27,4 +27,9 @@ echo "Running js/tests/integration.test.js..."
 node js/tests/integration.test.js
 echo -e "${GREEN}✓ integration tests passed!${NC}"
 
+echo -e "${YELLOW}Running runtime error tests...${NC}"
+echo "Running js/tests/runtime-errors.test.js..."
+node js/tests/runtime-errors.test.js
+echo -e "${GREEN}✓ runtime error tests passed!${NC}"
+
 echo -e "${GREEN}=== All tests passed! ===${NC}"

@@ -101,7 +101,13 @@
                 charactersContainer.appendChild(img);
             });
         })
-        .then(() => game.doNextActionsGroup());
+        .then(() => game.doNextActionsGroup())
+        .catch(err =>
+            game.showFatalError(err?.message || String(err)));
+
+    window.addEventListener('unhandledrejection', ev => {
+        game.showFatalError(ev.reason?.message || String(ev.reason));
+    });
 
     window.addEventListener("click", ev => {
         const isButtonClicked = ev.target.tagName === "BUTTON" || ev.target.tagName === "A";

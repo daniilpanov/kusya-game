@@ -18,7 +18,12 @@ export class PersonController {
         if (this.currentSprite)
             this.hide();
 
-        this.spritesMap[spriteName].classList.remove("hidden");
+        const sprite = this.spritesMap[spriteName];
+
+        if (!sprite)
+            throw new Error(`Sprite "${spriteName}" not found for person "${this.name}"`);
+
+        sprite.classList.remove("hidden");
         this.currentSprite = spriteName;
 
         this.updatePosition();

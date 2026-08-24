@@ -59,7 +59,7 @@ export class Game {
         for (const templateName in descriptor.templates) {
             const templatePath = descriptor.templates[templateName];
             const res = parser.parseFromString(
-                await fetch(this.gameResource + "/" + templatePath).then(r => r.text()),
+                await Utils.fetch(this.gameResource + "/" + templatePath).then(r => r.text()),
                 "text/html",
             );
 
@@ -141,16 +141,50 @@ export class Game {
     }
 
     async _loadScene(key) {
+        const scenePath = this.sceneDescriptors[key];
+
+        if (!scenePath)
+            throw new Error(`Scene "${key}" not found in game descriptor`);
+
+        const content = await Utils.fetch(`${this.gameResource}/${scenePath}`).then(res => res.text());
+
         this.sceneController = new SceneController(
             key,
-            await fetch(this.gameResource + "/" + this.sceneDescriptors[key])
-                .then(res => res.text()),
+            content,
             this.handleAction.bind(this),
         );
     }
 
     handleAction({ name, args }) {
-        return this.handlersMap[`action_${name}`](args);
+        const handler = this.handlersMap[`action_${name}`];
+
+        if (!handler)
+            throw new Error(`Unknown action "${name}"`);
+
+        return handler(args);
+    }
+
+    showFatalError(message) {
+        console.error('Fatal error:', message);
+
+        let overlay = document.getElementById('fatalErrorOverlay');
+
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'fatalErrorOverlay';
+            overlay.className = 'error-overlay';
+            overlay.innerHTML = `
+                <div class="error-overlay-content">
+                    <h2>Произошла ошибка</h2>
+                    <p class="error-overlay-message"></p>
+                    <a class="btn btn-primary" href="index.html">В меню</a>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        overlay.querySelector('.error-overlay-message').textContent = message;
+        overlay.style.display = 'flex';
     }
 
     _isActiveBackgroundProcesses() {

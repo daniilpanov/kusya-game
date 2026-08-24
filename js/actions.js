@@ -8,11 +8,26 @@ const validateCoordinates = (x, y) => {
     return [x, y];
 };
 
+const resolvePerson = (persons, personSprite) => {
+    const [personId, spriteId = "default"] = personSprite.split(".");
+    const person = persons[personId];
+
+    if (!person)
+        throw new Error(`Person "${personId}" not found`);
+
+    return [person, spriteId];
+};
+
 export const createHandlersMap = () => ({
     action_setBackground([ bgKey ]) {
         bgKey = String(bgKey);
+        const background = this.backgrounds[bgKey];
+
+        if (!background)
+            throw new Error(`Background "${bgKey}" not found`);
+
         this.bgWrapper.innerHTML = "";
-        this.bgWrapper.appendChild(this.backgrounds[bgKey].img);
+        this.bgWrapper.appendChild(background.img);
     },
     action_if([ condition, target ]) {
         if (this.expressionsParser.evaluate(condition))
@@ -31,7 +46,12 @@ export const createHandlersMap = () => ({
         this.variables[varName] += this.expressionsParser.evaluate(value);
     },
     action_addStats([ statName, value ]) {
-        this.stats[statName].value += this.expressionsParser.evaluate(value);
+        const stat = this.stats[statName];
+
+        if (!stat)
+            throw new Error(`Stat "${statName}" not found`);
+
+        stat.value += this.expressionsParser.evaluate(value);
     },
     action_goto([ groupKey ]) {
         return this.doActionsGroupByKey(String(groupKey));
@@ -41,8 +61,8 @@ export const createHandlersMap = () => ({
     },
     action_movePersonSprite([ personSprite, x, y ]) {
         const [vx, vy] = validateCoordinates(x, y);
-        const [personId] = personSprite.split(".");
-        this.persons[personId].setAnchorPosition(vx, vy);
+        const [person] = resolvePerson(this.persons, personSprite);
+        person.setAnchorPosition(vx, vy);
     },
     action_showPersonSprite([ personSprite, hideAllOther = false, x = undefined, y = undefined ]) {
         if (!personSprite) {
@@ -52,8 +72,7 @@ export const createHandlersMap = () => ({
             return;
         }
 
-        const [personId, personSpriteId = "default"] = personSprite.split(".");
-        const currentPersonObj = this.persons[personId];
+        const [currentPersonObj, personSpriteId] = resolvePerson(this.persons, personSprite);
 
         if (hideAllOther)
             for (const person of this.activePersons)
