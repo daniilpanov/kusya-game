@@ -306,3 +306,131 @@
     color: #999;
     padding: 16px 4px;
 }
+
+/* ===== Flow graph view ===== */
+
+.hidden {
+    display: none !important;
+}
+
+.flow-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 480px;
+    border: 1px solid #d0d4da;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f4f6f9;
+}
+
+.flow-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #eef1f5;
+    border-bottom: 1px solid #d0d4da;
+    font-size: 13px;
+}
+
+.flow-info .flow-info-label {
+    font-family: monospace;
+    margin-right: auto;
+}
+
+.flow-info button.danger {
+    color: #b02a2a;
+}
+
+#flowCanvas {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Drawflow nodes */
+#flowCanvas .drawflow-node .flow-node {
+    width: 180px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 1px solid #c3c9d2;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(20, 30, 50, 0.08);
+    font-size: 12px;
+}
+
+#flowCanvas .drawflow-node.selected .flow-node,
+#flowCanvas .drawflow-node:hover .flow-node {
+    border-color: #4a7bd0;
+}
+
+#flowCanvas .flow-node-exit .flow-node-key {
+    color: #7a1fa2;
+}
+
+#flowCanvas .flow-node-key {
+    font-family: monospace;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+#flowCanvas .flow-node-summary {
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#flowCanvas .flow-node-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+    min-height: 0;
+}
+
+#flowCanvas .flow-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #eceff3;
+    border: 1px solid #d5dae1;
+}
+
+#flowCanvas .flow-badge.end {
+    background: #f3e6fb;
+    color: #7a1fa2;
+    border-color: #ddb6ef;
+}
+
+#flowCanvas .flow-badge.if {
+    background: #fff4dd;
+    color: #8a6100;
+    border-color: #ecd39a;
+}
+
+#flowCanvas .flow-badge.broken {
+    background: #fdeaea;
+    color: #b02a2a;
+    border-color: #efb9b9;
+}
+
+/* Condition labels on if-wires */
+#flowCanvas .flow-edge-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: #fff8e6;
+    border: 1px dashed #d9a300;
+    color: #6b5200;
+    border-radius: 10px;
+    font-size: 11px;
+    font-family: monospace;
+    padding: 1px 7px;
+    pointer-events: none;
+    z-index: 4;
+}

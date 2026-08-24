@@ -17,6 +17,7 @@ js/
 ├── action-specs.js — ACTION_SPECS: реестр экшнов для редактора (категории, типы полей)
 ├── editor.js       — ScenesEditor: UI редактора (палитра → группы → карточки экшнов)
 ├── editor-fields.js — конвертеры formValues ↔ args для типизированных карточек
+├── editor-graph.js — FlowGraphView: граф переходов сцены на Drawflow (режим «⬡ Граф»)
 ├── person.js       — PersonController: спрайты персонажей
 ├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/
@@ -24,6 +25,9 @@ js/
     ├── act/act-serializer.js      — ActSerializer: AST → текст .act (round-trip к парсеру)
     ├── act/ast-editor.js          — чистые CRUD-хелперы над AST групп/экшнов
     ├── expressions/expressions.js — ExpressionsParser: парсер и вычисление выражений
+    ├── flow/flow-graph.js        — buildFlowGraph: AST → {nodes, edges}; resolveEdgeAction
+    ├── flow/flow-layout.js       — layoutGraph: раскладка узлов графа (ряды × колонки)
+    ├── drawflow/drawflow.js      — вендорная либа Drawflow (ES-модуль, MIT; стили css/vendor-drawflow.css)
     ├── templater/templater.js     — HTML-шаблонизатор
     ├── toml/toml.js               — вендорная либа (глобаль toml, классический скрипт)
     └── typer/typer.js             — печатающийся текст
@@ -187,6 +191,8 @@ node js/lib/act/act-parser.test.js          # ActParser
 node js/lib/act/act-serializer.test.js      # ActSerializer + round-trip
 node js/lib/act/ast-editor.test.js          # AST-хелперы редактора
 node js/action-specs.test.js                # реестр экшнов + конвертеры полей
+node js/lib/flow/flow-graph.test.js         # модель графа переходов
+node js/lib/flow/flow-layout.test.js        # раскладка графа
 node js/lib/expressions/expressions.test.js # Expressions
 node js/tests/integration.test.js           # интеграционные
 node js/tests/runtime-errors.test.js        # изоляция упавших нод, guards

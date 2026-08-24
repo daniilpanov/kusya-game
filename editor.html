@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Novel Platform - Редактор сцен</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/vendor-drawflow.css">
     <link rel="stylesheet" href="css/editor.css">
 </head>
 <body>
@@ -23,6 +24,7 @@
             </select>
             <button id="exportBtn" disabled>Скачать .act</button>
             <button id="saveBtn" disabled title="Перезаписать файл сцены на сервере">Сохранить на сервер</button>
+            <button id="flowToggleBtn" disabled title="Переключить режим: карточки / граф переходов">⬡ Граф</button>
         </div>
     </header>
 
@@ -49,6 +51,11 @@
             <div id="actionsList"></div>
         </section>
     </main>
+
+    <div id="flowWrap" class="flow-wrap hidden">
+        <div id="flowInfo" class="flow-info hidden"></div>
+        <div id="flowCanvas" tabindex="0"></div>
+    </div>
 </div>
 
 <script type="importmap">

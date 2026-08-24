@@ -16,6 +16,8 @@ import {
     moveAction,
     findGroupKeyError,
 } from '#/lib/act/ast-editor.js';
+import { buildFlowGraph, resolveEdgeAction } from '#/lib/flow/flow-graph.js';
+import { FlowGraphView } from '#/editor-graph.js';
 
 export class ScenesEditor {
     constructor() {
@@ -43,6 +45,23 @@ export class ScenesEditor {
         this.$actionsList = document.getElementById('actionsList');
         this.$currentGroupKey = document.getElementById('currentGroupKey');
         this.$paletteList = document.getElementById('paletteList');
+        this.$flowToggleBtn = document.getElementById('flowToggleBtn');
+        this.$flowWrap = document.getElementById('flowWrap');
+        this.$flowCanvas = document.getElementById('flowCanvas');
+        this.$flowInfo = document.getElementById('flowInfo');
+        this.mode = 'cards';
+
+        this.flowView = new FlowGraphView({
+            canvas: this.$flowCanvas,
+            info: this.$flowInfo,
+            getData: () => this.currentFlowData(),
+            onSelectGroup: key => this.selectGroupFromGraph(key),
+            onOpenGroup: key => this.openGroupFromGraph(key),
+            onCreateGoto: (src, dst) => this.createGotoFromGraph(src, dst),
+            onCreateIf: (src, dst, condition) => this.createIfFromGraph(src, dst, condition),
+            onDeleteEdgeAction: edge => this.deleteEdgeAction(edge),
+            onStatusMessage: message => this.setStatus(message),
+        });
     }
 
     async init() {
@@ -55,6 +74,10 @@ export class ScenesEditor {
 
         this.bindPaletteDropTargets();
         this.renderPalette();
+        this.flowView.start();
+
+        this.$flowToggleBtn.addEventListener('click', () =>
+            this.setMode(this.mode === 'graph' ? 'cards' : 'graph'));
 
         await this.loadGames();
     }
@@ -106,6 +129,8 @@ export class ScenesEditor {
         this.$saveBtn.disabled = true;
         this.$addGroupBtn.disabled = true;
         this.$addActionBtn.disabled = true;
+        this.$flowToggleBtn.disabled = true;
+        this.setMode('cards');
         this.renderGroups();
         this.renderActions();
     }
@@ -129,6 +154,7 @@ export class ScenesEditor {
         this.$exportBtn.disabled = false;
         this.$saveBtn.disabled = false;
         this.$addGroupBtn.disabled = false;
+        this.$flowToggleBtn.disabled = false;
         this.setStatus(`Сцена "${sceneKey}" загружена`, 'success');
         this.renderGroups();
         this.renderActions();
@@ -197,6 +223,89 @@ export class ScenesEditor {
         this.selectedGroupIdx = index;
         this.renderGroups();
         this.renderActions();
+    }
+
+    setMode(mode) {
+        if (mode === this.mode) return;
+        if (mode === 'graph' && !this.ast) return;
+
+        this.mode = mode;
+        const graph = mode === 'graph';
+        document.querySelector('.editor-layout').classList.toggle('hidden', graph);
+        this.$flowWrap.classList.toggle('hidden', !graph);
+        this.$flowToggleBtn.textContent = graph ? '☰ Карточки' : '⬡ Граф';
+
+        if (graph)
+            this.flowView.show(`${this.game.resource}|${this.sceneFileName}`);
+        else
+            this.flowView.hide();
+    }
+
+    currentFlowData() {
+        if (!this.ast || !this.descriptor) return null;
+        return {
+            groups: this.ast.groups,
+            graph: buildFlowGraph({
+                groups: this.ast.groups,
+                sceneKeys: Object.keys(this.descriptor.scenes ?? {}),
+            }),
+        };
+    }
+
+    groupByKey(key) {
+        return this.ast?.groups.find(group => String(group.key) === String(key)) ?? null;
+    }
+
+    selectGroupFromGraph(key) {
+        const index = this.ast?.groups.findIndex(group => String(group.key) === key);
+        if (index === undefined || index === -1) return;
+
+        // Light update: rebuilding everything would interrupt canvas dragging
+        this.selectedGroupIdx = index;
+        [...this.$groupsList.children].forEach((el, i) =>
+            el.classList.toggle('selected', i === index));
+        this.$currentGroupKey.textContent = this.ast.groups[index].key;
+    }
+
+    openGroupFromGraph(key) {
+        const index = this.ast?.groups.findIndex(group => String(group.key) === key);
+        if (index === undefined || index === -1) return;
+        this.setMode('cards');
+        this.selectGroup(index);
+    }
+
+    createGotoFromGraph(sourceKey, targetKey) {
+        const group = this.groupByKey(sourceKey);
+        if (!group) return;
+
+        insertAction(group, group.actions.length, createAction('goto', [targetKey]));
+        this.renderGroups();
+        this.renderActions();
+        this.setStatus(`[${sourceKey}] → goto(${targetKey}) добавлен`);
+    }
+
+    createIfFromGraph(sourceKey, targetKey, condition) {
+        const group = this.groupByKey(sourceKey);
+        if (!group) return;
+
+        insertAction(group, group.actions.length, createAction('if', [condition, targetKey]));
+        this.renderGroups();
+        this.renderActions();
+        this.setStatus(`[${sourceKey}] → if(${condition}): ${targetKey} добавлен`);
+    }
+
+    deleteEdgeAction(edge) {
+        const group = this.ast?.groups[edge.from];
+        if (!group) return;
+
+        const index = resolveEdgeAction(group, edge);
+        if (index === -1)
+            return this.setStatus('Действие перехода не найдено в группе', 'error');
+
+        removeAction(group, index);
+        this.renderGroups();
+        this.renderActions();
+        this.setStatus(`Переход из [${group.key}] удалён`);
     }
 
     addAction() {
@@ -304,6 +413,8 @@ export class ScenesEditor {
             item.append(keyEl, countEl, upBtn, downBtn, editBtn, delBtn);
             this.$groupsList.appendChild(item);
         });
+
+        this.flowView.syncIfVisible();
     }
 
     renderActions() {
