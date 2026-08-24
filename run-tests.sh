@@ -27,6 +27,11 @@ echo "Running js/lib/act/ast-editor.test.js..."
 node js/lib/act/ast-editor.test.js
 echo -e "${GREEN}✓ ast-editor tests passed!${NC}"
 
+echo -e "${YELLOW}Running action-specs tests...${NC}"
+echo "Running js/action-specs.test.js..."
+node js/action-specs.test.js
+echo -e "${GREEN}✓ action-specs tests passed!${NC}"
+
 echo -e "${YELLOW}Running expressions tests...${NC}"
 echo "Running js/lib/expressions/expressions.test.js..."
 node js/lib/expressions/expressions.test.js

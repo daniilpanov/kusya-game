@@ -55,17 +55,18 @@
 
 .editor-layout {
     display: grid;
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 230px 220px 1fr;
     gap: 16px;
     align-items: start;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .editor-layout {
         grid-template-columns: 1fr;
     }
 }
 
+.palette-panel,
 .groups-panel,
 .actions-panel {
     border: 1px solid #d8d8d8;
@@ -73,6 +74,44 @@
     background: #fff;
     padding: 12px;
     min-height: 300px;
+}
+
+.palette-category {
+    margin-bottom: 12px;
+}
+
+.palette-category-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #888;
+    margin-bottom: 6px;
+}
+
+.palette-card {
+    border: 1px solid #cdd6e4;
+    background: #f4f7fc;
+    border-radius: 6px;
+    padding: 7px 10px;
+    margin-bottom: 5px;
+    cursor: grab;
+    font-size: 14px;
+    user-select: none;
+}
+
+.palette-card:hover {
+    background: #e8effc;
+    border-color: #b3ccf5;
+}
+
+.palette-card:active {
+    cursor: grabbing;
+}
+
+.palette-hint {
+    font-size: 12px;
+    color: #999;
+    margin-top: 8px;
 }
 
 .panel-title {
@@ -145,6 +184,89 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+.action-card.typed {
+    background: #fbfcfe;
+}
+
+.action-card.drop-target {
+    outline: 2px dashed #7aa5e0;
+    outline-offset: 2px;
+}
+
+.action-card.drop-before {
+    box-shadow: 0 -3px 0 0 #4a83d4;
+}
+
+.action-card .action-badge {
+    font-size: 12px;
+    color: #667;
+    background: #eef1f6;
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+.action-card .action-controls {
+    margin-left: auto;
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.action-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.field-row.compact {
+    margin-bottom: 4px;
+}
+
+.field-label {
+    min-width: 130px;
+    font-size: 13px;
+    color: #556;
+}
+
+.field-row input,
+.field-row select,
+.field-row textarea {
+    flex: 1;
+    min-width: 120px;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font: inherit;
+}
+
+.rest-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: 138px;
+}
+
+.mini-btn {
+    border: 1px solid #c4cdd9;
+    background: #f2f5fa;
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    align-self: flex-start;
+    margin-left: 138px;
+}
+
+.mini-btn:hover {
+    background: #e8effc;
 }
 
 .action-card .action-row {
