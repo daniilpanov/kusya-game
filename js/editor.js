@@ -2,6 +2,8 @@ import { Utils } from '#/utils.js';
 import { ActParser } from '#/lib/act/act-parser.js';
 import { ActSerializer } from '#/lib/act/act-serializer.js';
 import { getKnownActionNames } from '#/actions.js';
+import { describeAction, paletteByCategory, ACTION_CATEGORIES } from '#/action-specs.js';
+import { argsToFormValues, formValuesToArgs, defaultFormValues, FieldError } from '#/editor-fields.js';
 import {
     createGroup,
     createAction,
@@ -27,6 +29,8 @@ export class ScenesEditor {
         this.sceneFileName = '';
         this.ast = null;
         this.selectedGroupIdx = -1;
+        this.rawMode = new WeakSet();
+        this.cardToAction = new WeakMap();
 
         this.$gameSelect = document.getElementById('gameSelect');
         this.$sceneSelect = document.getElementById('sceneSelect');
@@ -38,6 +42,7 @@ export class ScenesEditor {
         this.$groupsList = document.getElementById('groupsList');
         this.$actionsList = document.getElementById('actionsList');
         this.$currentGroupKey = document.getElementById('currentGroupKey');
+        this.$paletteList = document.getElementById('paletteList');
     }
 
     async init() {
@@ -47,6 +52,9 @@ export class ScenesEditor {
         this.$saveBtn.addEventListener('click', () => this.saveScene().catch(e => this.setStatus(e.message, 'error')));
         this.$addGroupBtn.addEventListener('click', () => this.addGroup());
         this.$addActionBtn.addEventListener('click', () => this.addAction());
+
+        this.bindPaletteDropTargets();
+        this.renderPalette();
 
         await this.loadGames();
     }
@@ -202,25 +210,6 @@ export class ScenesEditor {
         this.renderActions();
     }
 
-    applyAction(group, index, nameInput, argsInput, errorEl, card) {
-        const name = nameInput.value.trim();
-        try {
-            if (!name)
-                throw new Error('Пустое имя экшна');
-
-            const args = ActParser.parseArgs(argsInput.value);
-            group.actions[index].name = name;
-            group.actions[index].args = args;
-
-            errorEl.textContent = '';
-            card.classList.remove('invalid');
-            this.renderGroups();
-        } catch (error) {
-            errorEl.textContent = error.message;
-            card.classList.add('invalid');
-        }
-    }
-
     buildSceneText() {
         const ast = this.requireAst();
         const text = new ActSerializer().serialize(ast);
@@ -272,7 +261,22 @@ export class ScenesEditor {
         }
     }
 
+    refreshVarsDatalist() {
+        const names = new Set();
+        for (const group of this.ast?.groups ?? [])
+            for (const action of group.actions)
+                if (['setVar', 'addVar'].includes(action.name) && typeof action.args[0] === 'string')
+                    names.add(action.args[0]);
+
+        const datalist = document.getElementById('varsList');
+        if (!datalist) return;
+        datalist.innerHTML = '';
+        for (const name of names)
+            datalist.appendChild(new Option(name));
+    }
+
     renderGroups() {
+        this.refreshVarsDatalist();
         this.$groupsList.innerHTML = '';
         this.$currentGroupKey.textContent = this.selectedGroupIdx >= 0 && this.ast
             ? this.ast.groups[this.selectedGroupIdx]?.key : '—';
@@ -321,6 +325,23 @@ export class ScenesEditor {
     }
 
     buildActionCard(group, index) {
+        const action = group.actions[index];
+        const spec = describeAction(action.name);
+        const conversion = spec && !this.rawMode.has(action)
+            ? argsToFormValues(spec, action.args)
+            : { ok: false };
+
+        let card;
+        if (spec && conversion.ok)
+            card = this.buildTypedCard(group, index, spec, conversion.values);
+        else
+            card = this.buildRawCard(group, index, spec ? null : `Неизвестный экшн "${action.name}"`);
+
+        this.cardToAction.set(card, action);
+        return card;
+    }
+
+    makeCardShell(group, index, badgeText) {
         const card = document.createElement('div');
         card.className = 'action-card';
 
@@ -330,6 +351,181 @@ export class ScenesEditor {
         const order = document.createElement('span');
         order.className = 'action-order';
         order.textContent = `${index + 1}.`;
+
+        row.appendChild(order);
+        if (badgeText) {
+            const badge = document.createElement('span');
+            badge.className = 'action-badge';
+            badge.textContent = badgeText;
+            row.appendChild(badge);
+        }
+
+        const controls = document.createElement('span');
+        controls.className = 'action-controls';
+        controls.append(
+            this.makeIconBtn('↑', () => { moveAction(group, index, index - 1); this.renderActions(); }),
+            this.makeIconBtn('↓', () => { moveAction(group, index, index + 1); this.renderActions(); }),
+        );
+        row.appendChild(controls);
+
+        const errorEl = document.createElement('div');
+        errorEl.className = 'action-error';
+
+        card.append(row, errorEl);
+        return { card, row, errorEl };
+    }
+
+    buildTypedCard(group, index, spec, values) {
+        const action = group.actions[index];
+        const { card, row, errorEl } = this.makeCardShell(group, index, spec.title);
+        card.classList.add('typed');
+
+        const rawBtn = this.makeIconBtn('⌗', () => {
+            this.rawMode.add(action);
+            this.renderActions();
+        });
+        rawBtn.title = 'Редактировать как сырую строку';
+        row.querySelector('.action-controls').append(rawBtn,
+            this.makeIconBtn('✕', () => { removeAction(group, index); this.renderGroups(); this.renderActions(); }));
+
+        const inputs = {};
+        const restContainer = spec.rest ? document.createElement('div') : null;
+
+        const collectAndApply = () => {
+            try {
+                const restValues = restContainer
+                    ? [...restContainer.querySelectorAll('input')].map(input => input.value)
+                    : [];
+                action.args = formValuesToArgs(spec, inputs, restValues);
+                errorEl.textContent = '';
+                card.classList.remove('invalid');
+                this.renderGroups();
+            } catch (error) {
+                errorEl.textContent = error instanceof FieldError ? error.message : error.message;
+                card.classList.add('invalid');
+            }
+        };
+
+        const fieldsBox = document.createElement('div');
+        fieldsBox.className = 'action-fields';
+
+        for (const fieldSpec of spec.args ?? []) {
+            const fieldRow = this.makeTypedField(fieldSpec, values[fieldSpec.key], collectAndApply);
+            inputs[fieldSpec.key] = fieldRow.input;
+            fieldsBox.appendChild(fieldRow.wrap);
+        }
+
+        if (spec.trailingBool) {
+            const fieldRow = this.makeTypedField(
+                { ...spec.trailingBool, kind: 'bool' },
+                values[spec.trailingBool.key],
+                collectAndApply,
+            );
+            inputs[spec.trailingBool.key] = fieldRow.input;
+            fieldsBox.appendChild(fieldRow.wrap);
+        }
+
+        if (restContainer) {
+            const restLabel = document.createElement('div');
+            restLabel.className = 'field-label';
+            restLabel.textContent = `${spec.rest.label}:`;
+            restContainer.className = 'rest-fields';
+
+            const addVariant = value => {
+                const wrap = document.createElement('div');
+                wrap.className = 'field-row compact';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'вариант ответа';
+                input.value = value ?? '';
+                input.addEventListener('change', collectAndApply);
+                const del = this.makeIconBtn('✕', () => { wrap.remove(); collectAndApply(); });
+                wrap.append(input, del);
+                restContainer.appendChild(wrap);
+            };
+
+            for (const variant of values[spec.rest.key] ?? [''])
+                addVariant(variant);
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'mini-btn';
+            addBtn.type = 'button';
+            addBtn.textContent = '+ вариант';
+            addBtn.addEventListener('click', () => { addVariant(''); collectAndApply(); });
+
+            const restBox = document.createElement('div');
+            restBox.append(restLabel, restContainer, addBtn);
+            fieldsBox.appendChild(restBox);
+        }
+
+        card.appendChild(fieldsBox);
+        return card;
+    }
+
+    makeTypedField(fieldSpec, value, onChange) {
+        const wrap = document.createElement('div');
+        wrap.className = 'field-row';
+
+        const label = document.createElement('label');
+        label.className = 'field-label';
+        label.textContent = fieldSpec.label;
+        wrap.appendChild(label);
+
+        let input;
+        const options = this.descriptorSelectOptions(fieldSpec.kind);
+
+        if (Array.isArray(options)) {
+            input = document.createElement('select');
+            input.appendChild(new Option(fieldSpec.optional ? '—' : 'выберите…', ''));
+            for (const option of options)
+                input.appendChild(new Option(option.label, option.value));
+            if (value && !options.some(option => option.value === value))
+                input.appendChild(new Option(value, value));
+            input.value = value ?? '';
+        } else if (fieldSpec.kind === 'textarea') {
+            input = document.createElement('textarea');
+            input.rows = 2;
+            input.value = value ?? '';
+        } else if (fieldSpec.kind === 'expression') {
+            input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'выражение, напр. score + 1';
+            input.title = 'Вычисляется ExpressionsParser: числа, строки, переменные, операторы';
+            input.value = value ?? '';
+        } else if (fieldSpec.kind === 'bool') {
+            input = document.createElement('select');
+            input.appendChild(new Option('—', ''));
+            input.appendChild(new Option('да', 'true'));
+            input.appendChild(new Option('нет', 'false'));
+            input.value = value ?? '';
+        } else {
+            input = document.createElement('input');
+            input.type = 'text';
+            if (fieldSpec.kind === 'varName')
+                input.setAttribute('list', 'varsList');
+            input.value = value ?? '';
+        }
+
+        input.addEventListener('change', onChange);
+        wrap.appendChild(input);
+        return { wrap, input };
+    }
+
+    buildRawCard(group, index, unknownNote) {
+        const action = group.actions[index];
+        const { card, row, errorEl } = this.makeCardShell(group, index, unknownNote);
+        if (unknownNote)
+            card.classList.add('invalid');
+
+        const spec = describeAction(action.name);
+        if (spec && this.rawMode.has(action)) {
+            const typedBtn = this.makeIconBtn('▤', () => {
+                this.rawMode.delete(action);
+                this.renderActions();
+            });
+            typedBtn.title = 'Вернуться к типизированным полям';
+            row.querySelector('.action-controls').appendChild(typedBtn);
+        }
 
         const nameInput = document.createElement('input');
         nameInput.className = 'action-name';
@@ -345,27 +541,142 @@ export class ScenesEditor {
             catch { return '?'; }
         }).join(', ');
 
-        const upBtn = this.makeIconBtn('↑', () => { moveAction(group, index, index - 1); this.renderActions(); });
-        const downBtn = this.makeIconBtn('↓', () => { moveAction(group, index, index + 1); this.renderActions(); });
         const delBtn = this.makeIconBtn('✕', () => { removeAction(group, index); this.renderGroups(); this.renderActions(); });
+        row.insertBefore(nameInput, row.querySelector('.action-controls'));
+        row.insertBefore(argsInput, row.querySelector('.action-controls'));
+        row.querySelector('.action-controls').appendChild(delBtn);
 
-        row.append(order, nameInput, argsInput, upBtn, downBtn, delBtn);
+        const apply = () => {
+            try {
+                const name = nameInput.value.trim();
+                if (!name)
+                    throw new Error('Пустое имя экшна');
 
-        const errorEl = document.createElement('div');
-        errorEl.className = 'action-error';
+                action.name = name;
+                action.args = ActParser.parseArgs(argsInput.value);
+                errorEl.textContent = '';
+                card.classList.remove('invalid');
+                this.renderGroups();
+            } catch (error) {
+                errorEl.textContent = error.message;
+                card.classList.add('invalid');
+            }
+        };
 
-        if (!this.knownActions.includes(action.name)) {
-            card.classList.add('invalid');
-            errorEl.textContent = `Неизвестный экшн "${action.name}"`;
-        }
-
-        nameInput.addEventListener('change', () =>
-            this.applyAction(group, index, nameInput, argsInput, errorEl, card));
-        argsInput.addEventListener('change', () =>
-            this.applyAction(group, index, nameInput, argsInput, errorEl, card));
-
-        card.append(row, errorEl);
+        nameInput.addEventListener('change', apply);
+        argsInput.addEventListener('change', apply);
         return card;
+    }
+
+    descriptorSelectOptions(kind) {
+        const descriptor = this.descriptor ?? {};
+
+        switch (kind) {
+            case 'person': {
+                const options = [];
+                for (const [personKey, person] of Object.entries(descriptor.persons ?? {})) {
+                    const spriteKeys = ['default',
+                        ...Object.keys(person.sprites ?? {}).filter(key => key !== 'default')];
+                    for (const spriteKey of spriteKeys)
+                        options.push({ value: `${personKey}.${spriteKey}`, label: `${person.name || personKey} · ${spriteKey}` });
+                }
+                return options.length ? options : null;
+            }
+            case 'background':
+                return Object.keys(descriptor.backgrounds ?? {}).map(key => ({ value: key, label: key }));
+            case 'stat':
+                return Object.entries(descriptor.stats ?? {})
+                    .map(([key, stat]) => ({ value: key, label: stat.name || key }));
+            case 'sceneTarget':
+                return Object.keys(descriptor.scenes ?? {}).sort()
+                    .map(key => ({ value: key, label: `Сцена "${key}"` }));
+            case 'groupTarget':
+                return (this.ast?.groups ?? []).map(group => ({ value: group.key, label: `[${group.key}]` }));
+            default:
+                return null;
+        }
+    }
+
+    renderPalette() {
+        this.$paletteList.innerHTML = '';
+
+        for (const category of ACTION_CATEGORIES) {
+            const names = paletteByCategory()[category];
+            if (!names.length) continue;
+
+            const box = document.createElement('div');
+            box.className = 'palette-category';
+
+            const title = document.createElement('div');
+            title.className = 'palette-category-title';
+            title.textContent = category;
+            box.appendChild(title);
+
+            for (const name of names) {
+                const item = document.createElement('div');
+                item.className = 'palette-card';
+                item.draggable = true;
+                item.dataset.action = name;
+                item.textContent = describeAction(name).title;
+                item.title = `${name}(…) — перетащите в группу или кликните`;
+                item.addEventListener('dragstart', event => {
+                    event.dataTransfer.setData('text/plain', name);
+                    event.dataTransfer.effectAllowed = 'copy';
+                });
+                item.addEventListener('click', () => this.insertFromPalette(name));
+                box.appendChild(item);
+            }
+
+            this.$paletteList.appendChild(box);
+        }
+    }
+
+    insertFromPalette(name, atGroupIdx = this.selectedGroupIdx, atActionIdx = null) {
+        if (!this.ast || atGroupIdx < 0)
+            return this.setStatus('Сначала выберите группу', 'error');
+
+        const group = this.ast.groups[atGroupIdx];
+        const position = atActionIdx ?? group.actions.length;
+        insertAction(group, position, createAction(name));
+        this.selectedGroupIdx = atGroupIdx;
+        this.renderGroups();
+        this.renderActions();
+    }
+
+    bindPaletteDropTargets() {
+        const allowDrop = element => {
+            element.addEventListener('dragover', event => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'copy';
+                element.classList.add('drop-target');
+            });
+            element.addEventListener('dragleave', () => element.classList.remove('drop-target'));
+        };
+
+        allowDrop(this.$actionsList);
+        this.$actionsList.addEventListener('drop', event => {
+            event.preventDefault();
+            this.$actionsList.classList.remove('drop-target');
+            this.insertFromPalette(event.dataTransfer.getData('text/plain'));
+        });
+
+        // Drop on a specific card inserts before that card
+        this.$actionsList.addEventListener('dragover', event => {
+            const card = event.target.closest('.action-card');
+            this.$actionsList.querySelectorAll('.drop-before').forEach(el => el.classList.remove('drop-before'));
+            if (card) card.classList.add('drop-before');
+        }, true);
+        this.$actionsList.addEventListener('drop', event => {
+            const card = event.target.closest('.action-card');
+            if (!card) return;
+            event.preventDefault();
+            event.stopPropagation();
+            card.classList.remove('drop-before');
+            const group = this.ast?.groups[this.selectedGroupIdx];
+            const index = group ? group.actions.indexOf(this.cardToAction.get(card)) : -1;
+            if (index >= 0)
+                this.insertFromPalette(event.dataTransfer.getData('text/plain'), this.selectedGroupIdx, index);
+        }, true);
     }
 
     makeIconBtn(label, onClick) {
@@ -392,5 +703,9 @@ datalist.id = 'knownActions';
 for (const name of editor.knownActions)
     datalist.appendChild(new Option(name));
 document.body.appendChild(datalist);
+
+const varsDatalist = document.createElement('datalist');
+varsDatalist.id = 'varsList';
+document.body.appendChild(varsDatalist);
 
 editor.init().catch(error => editor.setStatus(error.message, 'error'));
