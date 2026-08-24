@@ -32,6 +32,16 @@ echo "Running js/action-specs.test.js..."
 node js/action-specs.test.js
 echo -e "${GREEN}✓ action-specs tests passed!${NC}"
 
+echo -e "${YELLOW}Running flow-graph tests...${NC}"
+echo "Running js/lib/flow/flow-graph.test.js..."
+node js/lib/flow/flow-graph.test.js
+echo -e "${GREEN}✓ flow-graph tests passed!${NC}"
+
+echo -e "${YELLOW}Running flow-layout tests...${NC}"
+echo "Running js/lib/flow/flow-layout.test.js..."
+node js/lib/flow/flow-layout.test.js
+echo -e "${GREEN}✓ flow-layout tests passed!${NC}"
+
 echo -e "${YELLOW}Running expressions tests...${NC}"
 echo "Running js/lib/expressions/expressions.test.js..."
 node js/lib/expressions/expressions.test.js
