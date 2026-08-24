@@ -8,7 +8,7 @@ const TOKEN_TYPE_COMPARISON = 6;
 const TOKEN_TYPE_VARIABLE = 7;
 const TOKEN_TYPE_LITERAL = 8;
 
-class ExpressionsParser {
+export class ExpressionsParser {
     constructor({ getFromContextCallback = undefined, expression = undefined }, evaluate = false) {
         this.expression = expression;
 
@@ -380,6 +380,3 @@ class ExpressionsParser {
         throw new Error(`Unknown node type [getting a value]: ${node.type}`);
     }
 }
-
-if (typeof module !== 'undefined' && module.exports)
-    module.exports = { ExpressionsParser };

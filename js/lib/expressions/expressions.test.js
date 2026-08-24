@@ -1,5 +1,5 @@
-const { strict: assert } = require('assert');
-const { ExpressionsParser } = require('./expressions');
+import { strict as assert } from 'assert';
+import { ExpressionsParser } from '#/lib/expressions/expressions.js';
 
 const ctx = {
     x: 10,

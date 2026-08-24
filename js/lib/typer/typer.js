@@ -1,4 +1,4 @@
-class TextTyper {
+export class TextTyper {
     typerProcessId = undefined;
     finished = false;
 

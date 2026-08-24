@@ -8,7 +8,7 @@ const validateCoordinates = (x, y) => {
     return [x, y];
 };
 
-const createHandlersMap = () => ({
+export const createHandlersMap = () => ({
     action_setBackground([ bgKey ]) {
         bgKey = String(bgKey);
         this.bgWrapper.innerHTML = "";

@@ -1,4 +1,12 @@
-class Game {
+import { ExpressionsParser } from '#/lib/expressions/expressions.js';
+import { Templater } from '#/lib/templater/templater.js';
+import { Utils } from '#/utils.js';
+import { PersonController } from '#/person.js';
+import { SceneController } from '#/scene.js';
+import { createHandlersMap } from '#/actions.js';
+import { TemplaterTyperExtension } from '#/templater_typer_extension.js';
+
+export class Game {
     lang = "RU";
 
     sortedSceneKeys = undefined;

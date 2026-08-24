@@ -1,4 +1,4 @@
-class PersonController {
+export class PersonController {
     x = 0.5;  // 0 - left, 1 - right
     y = 0.5;  // 0 - bottom, 1 - top
     currentSprite = undefined;

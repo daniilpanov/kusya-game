@@ -35,7 +35,7 @@ const injectionPreHandlers = {
     },
 };
 
-class Templater {
+export class Templater {
     static injectionHandlers = injectionHandlers;
     static injectionPreHandlers = injectionPreHandlers;
 

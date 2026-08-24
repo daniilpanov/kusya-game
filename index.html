@@ -22,7 +22,13 @@
     </main>
 </div>
 
-<script src="js/utils.js"></script>
-<script src="js/app.js"></script>
+<script type="importmap">
+{
+    "imports": {
+        "#/": "./js/"
+    }
+}
+</script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

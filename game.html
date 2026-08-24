@@ -7,12 +7,15 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/game.css">
 
+    <!-- Vendored library (exposes global toml), used by Utils.fetchTOML -->
     <script src="js/lib/toml/toml.js"></script>
-    <script src="js/lib/expressions/expressions.js"></script>
-    <script src="js/lib/act/act-parser.js"></script>
-    <script src="js/lib/templater/templater.js"></script>
-    <script src="js/lib/typer/typer.js"></script>
-    <script src="js/templater_typer_extension.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "#/": "./js/"
+        }
+    }
+    </script>
 </head>
 <body>
 <div class="game-container">
@@ -53,13 +56,10 @@
     </div>
 </div>
 
-<script src="js/utils.js"></script>
-<script src="js/person.js"></script>
-<script src="js/scene.js"></script>
-<script src="js/actions.js"></script>
-<script src="js/game.js"></script>
+<script type="module">
+    import { Utils } from '#/utils.js';
+    import { Game } from '#/game.js';
 
-<script>
     document.getElementById('menuBtn').onclick = () =>
         document.getElementById('pauseMenu').style.display = 'block';
     document.getElementById('resumeBtn').onclick = () =>
