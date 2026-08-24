@@ -1,3 +1,5 @@
+import { computeAnchorStyles } from '#/lib/layout/anchor.js';
+
 export class PersonController {
     x = 0.5;  // 0 - left, 1 - right
     y = 0.5;  // 0 - bottom, 1 - top
@@ -34,32 +36,21 @@ export class PersonController {
             this.spritesMap[this.currentSprite].classList.add("hidden");
     }
 
-    updatePosition() {
+    updatePosition(viewport = undefined) {
         if (this.currentSprite === undefined)
             return;
 
+        const vp = viewport ?? {
+            width: window.innerWidth,
+            height: window.innerHeight,
+        };
+        const styles = computeAnchorStyles(this.x, this.y, vp);
+
+        if (!styles)
+            return;
+
         const sprite = this.spritesMap[this.currentSprite];
-
-        if (Math.abs(this.x - 0.5) < 0.01) {
-            sprite.style.left = "0px";
-            sprite.style.right = "0px";
-        } else if (this.x < 0.5) {
-            sprite.style.left = `${window.innerWidth * this.x}px`;
-            sprite.style.right = "";
-        } else {
-            sprite.style.left = "";
-            sprite.style.right = `${window.innerWidth * (1 - this.x)}px`;
-        }
-
-        if (Math.abs(this.y - 0.5) < 0.01) {
-            sprite.style.top = "0px";
-            sprite.style.bottom = "0px";
-        } else if (this.y < 0.5) {
-            sprite.style.top = "";
-            sprite.style.bottom = `${window.innerHeight * this.y}px`;
-        } else {
-            sprite.style.bottom = "";
-            sprite.style.top = `${window.innerHeight * (1 - this.y)}px`;
-        }
+        for (const side of ["left", "right", "top", "bottom"])
+            sprite.style[side] = styles[side];
     }
 }

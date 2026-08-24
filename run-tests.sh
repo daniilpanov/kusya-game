@@ -42,6 +42,11 @@ echo "Running js/lib/flow/flow-layout.test.js..."
 node js/lib/flow/flow-layout.test.js
 echo -e "${GREEN}✓ flow-layout tests passed!${NC}"
 
+echo -e "${YELLOW}Running anchor tests...${NC}"
+echo "Running js/lib/layout/anchor.test.js..."
+node js/lib/layout/anchor.test.js
+echo -e "${GREEN}✓ anchor tests passed!${NC}"
+
 echo -e "${YELLOW}Running expressions tests...${NC}"
 echo "Running js/lib/expressions/expressions.test.js..."
 node js/lib/expressions/expressions.test.js
