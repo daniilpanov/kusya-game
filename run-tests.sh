@@ -57,6 +57,11 @@ echo "Running js/lib/expressions/expressions.test.js..."
 node js/lib/expressions/expressions.test.js
 echo -e "${GREEN}✓ expressions tests passed!${NC}"
 
+echo -e "${YELLOW}Running import consistency tests...${NC}"
+echo "Running js/tests/imports.test.js..."
+node js/tests/imports.test.js
+echo -e "${GREEN}✓ import consistency tests passed!${NC}"
+
 echo -e "${YELLOW}Running integration tests...${NC}"
 echo "Running js/tests/integration.test.js..."
 node js/tests/integration.test.js
