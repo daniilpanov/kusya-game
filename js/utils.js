@@ -33,6 +33,9 @@ export class Utils {
 
     static async fetchTOML(url, options = {}) {
         // toml is a global from the vendored js/lib/toml/toml.js (loaded as a classic script)
+        if (typeof toml === 'undefined')
+            throw new Error('Vendored toml lib is not loaded: the page must include '
+                + '<script src="js/lib/toml/toml.js"></script> before its module scripts');
         return toml.parse(await (await this.fetch(url, options)).text());
     }
 
