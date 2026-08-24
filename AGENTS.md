@@ -14,7 +14,9 @@ js/
 ├── game.js         — Game: ядро, загрузка descriptor.toml, управление сценами
 ├── scene.js        — SceneController: загрузка action-групп из .act
 ├── actions.js      — createHandlersMap(): все обработчики экшнов + getKnownActionNames()
-├── editor.js       — ScenesEditor: UI редактора (игра → сцена → группы/экшны)
+├── action-specs.js — ACTION_SPECS: реестр экшнов для редактора (категории, типы полей)
+├── editor.js       — ScenesEditor: UI редактора (палитра → группы → карточки экшнов)
+├── editor-fields.js — конвертеры formValues ↔ args для типизированных карточек
 ├── person.js       — PersonController: спрайты персонажей
 ├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/
@@ -168,9 +170,11 @@ const result = parser.evaluate(); // число, строка или boolean
 
 `ScenesEditor` — клиентский nocode-редактор .act-файлов. Флоу: выбор игры (`GET /api/games`) → `descriptor.toml` → сцена (ключи из `[scenes]`, файл по полю `RU`) → парсинг через `ActParser`.
 
-- Правка: карточки экшнов (имя + сырая строка аргументов, токенизация через статический `ActParser.parseArgs`), CRUD и reorder групп/экшнов через чистые хелперы `lib/act/ast-editor.js`.
-- Валидация: имя экшна сверяется со списком `getKnownActionNames()` (экспорт `actions.js`); ключи групп проверяются на уникальность; ошибки аргументов показываются инлайн в карточке.
-- Сохранение v1 — скачивание файла: сериализация → контрольный round-trip `parse(serialize(ast))` должен дать идентичный AST → Blob-download `<имя сцены>.ru.act`. Запись на сервер пока отсутствует.
+- **Палитра карточек** (`ACTION_SPECS`, 5 категорий): перетаскивание в группу (drop на панель = в конец, на карточку = перед ней) или клик; нативный HTML5 DnD без либ.
+- **Типизированные карточки**: поля рендерятся по спеке экшна (`editor-fields.js` конвертирует formValues ↔ args); селекты персонажей/фонов/статов/лейблов групп строятся из descriptor и текущего AST; у `showChoice*` — вариадик список вариантов; тумблер `⌗` переключает карточку в сырой режим.
+- Правка: CRUD и reorder групп/экшнов через чистые хелперы `lib/act/ast-editor.js`.
+- Валидация: имя экшна сверяется со списком `getKnownActionNames()` (экспорт `actions.js`); тест гарантирует равенство множеств `ACTION_SPECS` ↔ хендлеры; ключи групп проверяются на уникальность; ошибки аргументов показываются инлайн в карточке.
+- Сохранение: «Скачать .act» (Blob-download `<имя сцены>.ru.act`) или «Сохранить на сервер» (`POST /api/games/{id}/scenes/{file}`); перед обоими — контрольный round-trip `parse(serialize(ast))` должен дать идентичный AST.
 - Комментарии при экспорте теряются (см. «Диагностика парсера») — сохранение нормализует файл.
 
 ---
@@ -182,6 +186,7 @@ const result = parser.evaluate(); // число, строка или boolean
 node js/lib/act/act-parser.test.js          # ActParser
 node js/lib/act/act-serializer.test.js      # ActSerializer + round-trip
 node js/lib/act/ast-editor.test.js          # AST-хелперы редактора
+node js/action-specs.test.js                # реестр экшнов + конвертеры полей
 node js/lib/expressions/expressions.test.js # Expressions
 node js/tests/integration.test.js           # интеграционные
 node js/tests/runtime-errors.test.js        # изоляция упавших нод, guards
