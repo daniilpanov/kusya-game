@@ -18,6 +18,8 @@ import {
 } from '#/lib/act/ast-editor.js';
 import { buildFlowGraph, resolveEdgeAction } from '#/lib/flow/flow-graph.js';
 import { FlowGraphView } from '#/editor-graph.js';
+import { getAdapter, buildEditorContext, createStagePreview } from '#/editor-adapters.js';
+import { openModal } from '#/editor-modal.js';
 
 export class ScenesEditor {
     constructor() {
@@ -33,6 +35,8 @@ export class ScenesEditor {
         this.selectedGroupIdx = -1;
         this.rawMode = new WeakSet();
         this.cardToAction = new WeakMap();
+        this.cardForm = new WeakMap();
+        this.editorContext = null;
 
         this.$gameSelect = document.getElementById('gameSelect');
         this.$sceneSelect = document.getElementById('sceneSelect');
@@ -104,6 +108,7 @@ export class ScenesEditor {
 
     async loadGame(gameResource) {
         this.game = this.games.find(game => game.resource === gameResource) ?? null;
+        this.editorContext = null;
         this.resetScene();
 
         if (!this.game) return;
@@ -452,6 +457,52 @@ export class ScenesEditor {
         return card;
     }
 
+    openActionAdapter(card) {
+        const action = this.cardToAction.get(card);
+        const form = this.cardForm.get(card);
+        const adapter = action && getAdapter(action.name);
+
+        if (!adapter || !form) return;
+
+        if (!this.editorContext)
+            this.editorContext = buildEditorContext(this.descriptor, this.game?.resource);
+
+        const values = {};
+        for (const [key, input] of Object.entries(form.inputs))
+            values[key] = input.value;
+
+        let controller = null;
+        const content = document.createElement('div');
+        content.className = 'adapter-body';
+
+        const ctx = {
+            container: content,
+            values,
+            context: this.editorContext,
+            makeStage: options => createStagePreview(this.editorContext, options),
+            onChange: patch => Object.assign(values, patch),
+        };
+
+        try {
+            controller = adapter.mount(ctx);
+        } catch (error) {
+            return this.setStatus(`Адаптер не запустился: ${error.message}`, 'error');
+        }
+
+        openModal({ title: adapter.title, content, wide: true }).then(saved => {
+            if (!saved || !controller) return;
+            const patch = controller.save();
+            if (!patch) return;
+            for (const [key, value] of Object.entries(patch)) {
+                const input = form.inputs[key];
+                if (input)
+                    input.value = String(value);
+            }
+            form.collectAndApply();
+            this.setStatus(`Визуальный редактор: «${adapter.title}» применён`, 'success');
+        });
+    }
+
     makeCardShell(group, index, badgeText) {
         const card = document.createElement('div');
         card.className = 'action-card';
@@ -498,6 +549,12 @@ export class ScenesEditor {
         rawBtn.title = 'Редактировать как сырую строку';
         row.querySelector('.action-controls').append(rawBtn,
             this.makeIconBtn('✕', () => { removeAction(group, index); this.renderGroups(); this.renderActions(); }));
+
+        if (getAdapter(action.name)) {
+            const artBtn = this.makeIconBtn('🎨', () => this.openActionAdapter(card));
+            artBtn.title = 'Визуальный редактор';
+            row.querySelector('.action-controls').prepend(artBtn);
+        }
 
         const inputs = {};
         const restContainer = spec.rest ? document.createElement('div') : null;
@@ -570,6 +627,7 @@ export class ScenesEditor {
         }
 
         card.appendChild(fieldsBox);
+        this.cardForm.set(card, { spec, inputs, restContainer, collectAndApply });
         return card;
     }
 
