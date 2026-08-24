@@ -17,7 +17,8 @@ js/
 ├── person.js       — PersonController: спрайты персонажей
 ├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/
-    ├── act/act-parser.js          — ActParser: парсер .act-файлов
+    ├── act/act-parser.js          — ActParser: парсер .act-файлов → AST { groups }
+    ├── act/act-serializer.js      — ActSerializer: AST → текст .act (round-trip к парсеру)
     ├── expressions/expressions.js — ExpressionsParser: парсер и вычисление выражений
     ├── templater/templater.js     — HTML-шаблонизатор
     ├── toml/toml.js               — вендорная либа (глобаль toml, классический скрипт)
@@ -92,6 +93,17 @@ end()
 
 Условный переход: `if(выражение): метка` — `выражение` вычисляется через `ExpressionsParser`.
 
+### Сериализация (AST → .act)
+
+```js
+const text = new ActSerializer({ groups }).serialize(); // или serialize(parseResult)
+```
+
+- Каноническая форма условия: `if(условие): метка` (последний аргумент — цель).
+- Строки эмитятся без кавычек, если репарсинг вернёт их без изменений; иначе — в кавычках (`"` или `'`, тот тип, которого нет внутри строки). **Backslash-эскейпов нет** — парсер сохраняет `\` буквально.
+- Невыразимые значения → `ActSerializeError` с контекстом группы/экшна: `NaN`, `Infinity`, `undefined`, объекты/массивы/функции, перевод строки внутри строки, строки с обоими типами кавычек.
+- Гарантия round-trip: `parse(serialize(parse(src)))` deep-equals `parse(src)` (покрыто тестами на реальных сценах). Комментарии при round-trip теряются (парсер их отбрасывает).
+
 ---
 
 ## Action handlers (`js/actions.js`)
@@ -105,7 +117,9 @@ action_showChoice([ choiceKey, text, ...choices ])   // делегирует sho
 action_showChoicePerson([ choiceKey, personSprite, text, ...choices ])
 action_if([ condition, target ])         // evaluate(condition) → if truthy, goto(target)
 action_goto([ groupKey ]) / action_gotoNext()
+action_gotoScene([ sceneKey ])           // переход к другой сцене по ключу
 action_gotoNextScene()
+action_cloneVar([ oldVarName, newVarName ])
 action_setVar([ varName, value ])        // value вычисляется как выражение
 action_addVar([ varName, value ])        // value вычисляется как выражение
 action_addStats([ statName, value ])     // value вычисляется как выражение
@@ -145,8 +159,9 @@ const result = parser.evaluate(); // число, строка или boolean
 ## Тесты
 
 ```bash
-./run-tests.sh                             # все тесты сразу
-node js/lib/act/act-parser.test.js         # ActParser
+./run-tests.sh                              # все тесты сразу
+node js/lib/act/act-parser.test.js          # ActParser
+node js/lib/act/act-serializer.test.js      # ActSerializer + round-trip
 node js/lib/expressions/expressions.test.js # Expressions
 node js/tests/integration.test.js           # интеграционные
 node js/tests/runtime-errors.test.js        # изоляция упавших нод, guards
