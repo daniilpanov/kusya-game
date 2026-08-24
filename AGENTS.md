@@ -214,9 +214,22 @@ resources/games/<game_id>/
 
 ---
 
+## API
+
+Роутинг: Apache `.htaccess` (docker) или `router.php` для `php -S`. Ответы — JSON `{success, ...}` / `{success:false, error}`.
+
+| Метод | Путь | Назначение |
+|---|---|---|
+| GET | `/api/games` | список игр (сканирует `resources/games/*`, читает `info.json`) |
+| POST | `/api/games/{gameId}/scenes/{file}` | перезапись файла сцены (body `{"content": "<act текст>"}`) |
+
+Правила write-эндпоинта (dev-only, без auth): перезаписываются только **существующие** файлы `resources/games/<gameId>/scenes/*.act`; `basename` + `realpath` против path traversal; атомарная запись (tmp+rename) с одноразовым бэкапом `<file>.bak`.
+
+---
+
 ## Запуск
 
 ```bash
 docker compose up -d       # http://localhost:8080
-php -S localhost:8080      # без Docker (API работает, БД не нужна)
+php -S localhost:8080 router.php   # без Docker (API работает через роутер, БД не нужна)
 ```
