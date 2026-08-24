@@ -34,7 +34,9 @@ try {
 
 function getGamesList() {
     $rootGamesUri = '/resources/games/';
-    $rootGamesPath = '..' . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'games' . DIRECTORY_SEPARATOR;
+    // Absolute path from __DIR__: must not depend on the process CWD
+    // (php -S runs from the repo root, Apache may run from anywhere)
+    $rootGamesPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'games' . DIRECTORY_SEPARATOR;
     $gameIds = scandir($rootGamesPath);
     $games = [];
     foreach ($gameIds as $gameId) {
