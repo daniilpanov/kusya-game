@@ -607,6 +607,9 @@ export class ScenesEditor {
             fieldsBox.appendChild(fieldRow.wrap);
         }
 
+        // setRestValues stays null for actions without rest variants
+        let setRestValues = null;
+
         if (restContainer) {
             const restLabel = document.createElement('div');
             restLabel.className = 'field-label';
@@ -635,7 +638,7 @@ export class ScenesEditor {
             addBtn.textContent = '+ вариант';
             addBtn.addEventListener('click', () => { addVariant(''); collectAndApply(); });
 
-            const setRestValues = newValues => {
+            setRestValues = newValues => {
                 restContainer.innerHTML = '';
                 for (const value of (newValues.length ? newValues : ['']))
                     addVariant(value);
