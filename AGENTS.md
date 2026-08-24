@@ -22,7 +22,10 @@ js/
 ├── editor-modal.js — openModal(): обёртка над нативным <dialog>
 ├── editor-preview.js — createStagePreview: live-превью сцены 16:9 из настоящих шаблонов игры
 ├── adapters/ — визуальные адаптеры (self-register через side-effect импорт)
-│   └── person-position.js — пилотный адаптер showPersonSprite (пресеты, драг, превью)
+│   ├── ui.js — общие хелперы адаптеров: пикеры персонажа и фона превью
+│   ├── person-position.js — адаптер showPersonSprite (пресеты, драг, превью)
+│   ├── phrase.js — адаптер showPhrasePerson (автор, текст, live-диалог)
+│   └── choice.js — адаптеры showChoice / showChoicePerson (варианты строками, экран выбора)
 ├── person.js       — PersonController: спрайты персонажей
 ├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/
@@ -189,7 +192,7 @@ const result = parser.evaluate(); // число, строка или boolean
 - адаптер работает **только на уровне formValues** (ключи как в `spec.args`); запись в AST — только через карточный `collectAndApply()`;
 - ресурсы игры — только через `context` (`buildEditorContext`: persons/backgrounds/scenes/templates с URL);
 - регистрация: `registerAdapter(actionName, { title, mount(ctx) → { save(): patch|null } })` в `js/adapters/*.js`, файл подключается side-effect импортом в `editor.js`;
-- `ctx`: `{ container, values, context, makeStage(options) → createStagePreview, onChange(patch) }`;
+- `ctx`: `{ container, values, context, spec, makeStage(options) → createStagePreview, onChange(patch) }`; `values` включает и rest-варианты (`values[spec.rest.key]` — массив строк); patch на save может менять rest целиком;
 - превью: `createStagePreview` строит бокс 16:9 из настоящих шаблонов и стилей игры (css/game.css подключён в editor.html, per-game styles.css инжектится со скоупом под `.stage-preview`);
 - геометрия спрайтов: `computeAnchorStyles(x, y, viewport)` из `js/lib/layout/anchor.js` — одна математика для игры (`PersonController.updatePosition(viewport?)`) и превью;
 - кнопка «🎨» появляется в typed-карточке автоматически при наличии адаптера.

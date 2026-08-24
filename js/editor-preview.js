@@ -44,9 +44,12 @@ export async function createStagePreview(context, { width = 560 } = {}) {
     characters.className = 'characters-container';
 
     const dialogue = document.createElement('div');
-    dialogue.className = 'dialogue-container active';
+    dialogue.className = 'dialogue-container';
 
-    root.append(background, characters, dialogue);
+    const choicesBox = document.createElement('div');
+    choicesBox.className = 'choices-container';
+
+    root.append(background, characters, dialogue, choicesBox);
 
     // Per-game stylesheet (descriptor.templates.styles), scoped to this preview
     const stylesURL = context?.templates?.styles;
@@ -57,6 +60,12 @@ export async function createStagePreview(context, { width = 560 } = {}) {
     }
 
     const dialogTemplateURL = context?.templates?.dialog ?? null;
+    const choicesTemplateURL = context?.templates?.choices ?? null;
+
+    const activateDialog = isActive => {
+        dialogue.classList.toggle('active', isActive);
+        choicesBox.classList.toggle('active', !isActive);
+    };
 
     const stage = {
         root,
@@ -99,6 +108,7 @@ export async function createStagePreview(context, { width = 560 } = {}) {
 
             dialogue.innerHTML = '';
             dialogue.appendChild(template.cloneNode(true));
+            activateDialog(true);
 
             for (const el of dialogue.querySelectorAll('[data-bs-injection-key]')) {
                 const key = el.getAttribute('data-bs-injection-key');
@@ -112,8 +122,50 @@ export async function createStagePreview(context, { width = 560 } = {}) {
             }
         },
 
+        async showChoices({ author, text, choices }) {
+            if (!choicesTemplateURL)
+                return;
+            const template = await fetchTemplateBody(choicesTemplateURL);
+            if (!template)
+                return;
+
+            choicesBox.innerHTML = '';
+            choicesBox.appendChild(template.cloneNode(true));
+            activateDialog(false);
+
+            const variantTemplate = choicesBox.querySelector('[data-bs-injection-callback-id]');
+            const box = choicesBox.querySelector('[data-bs-injection-key="choicesList"]');
+
+            for (const el of choicesBox.querySelectorAll('[data-bs-injection-key]')) {
+                const key = el.getAttribute('data-bs-injection-key');
+                if (key === 'author')
+                    el.textContent = author ?? '';
+                if (key === 'text')
+                    el.textContent = text ?? '';
+            }
+
+            if (!box || !variantTemplate)
+                return;
+
+            box.innerHTML = '';
+            for (const variant of choices ?? []) {
+                const btn = variantTemplate.cloneNode(true);
+                btn.removeAttribute('data-bs-injection-callback-id');
+                btn.textContent = variant;
+                btn.addEventListener('click', () =>
+                    [...box.children].forEach(child =>
+                        child.classList.toggle('picked', child === btn)));
+                box.appendChild(btn);
+            }
+        },
+
         hideDialog() {
             dialogue.innerHTML = '';
+        },
+
+        hideChoices() {
+            choicesBox.innerHTML = '';
+            activateDialog(true);
         },
     };
 
