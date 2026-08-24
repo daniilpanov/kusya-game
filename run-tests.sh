@@ -32,6 +32,11 @@ echo "Running js/action-specs.test.js..."
 node js/action-specs.test.js
 echo -e "${GREEN}✓ action-specs tests passed!${NC}"
 
+echo -e "${YELLOW}Running editor-adapters tests...${NC}"
+echo "Running js/editor-adapters.test.js..."
+node js/editor-adapters.test.js
+echo -e "${GREEN}✓ editor-adapters tests passed!${NC}"
+
 echo -e "${YELLOW}Running flow-graph tests...${NC}"
 echo "Running js/lib/flow/flow-graph.test.js..."
 node js/lib/flow/flow-graph.test.js

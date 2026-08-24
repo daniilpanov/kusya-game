@@ -18,6 +18,11 @@ js/
 ├── editor.js       — ScenesEditor: UI редактора (палитра → группы → карточки экшнов)
 ├── editor-fields.js — конвертеры formValues ↔ args для типизированных карточек
 ├── editor-graph.js — FlowGraphView: граф переходов сцены на Drawflow (режим «⬡ Граф»)
+├── editor-adapters.js — реестр визуальных адаптеров экшнов + buildEditorContext + хелперы координат
+├── editor-modal.js — openModal(): обёртка над нативным <dialog>
+├── editor-preview.js — createStagePreview: live-превью сцены 16:9 из настоящих шаблонов игры
+├── adapters/ — визуальные адаптеры (self-register через side-effect импорт)
+│   └── person-position.js — пилотный адаптер showPersonSprite (пресеты, драг, превью)
 ├── person.js       — PersonController: спрайты персонажей
 ├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/
@@ -28,6 +33,7 @@ js/
     ├── flow/flow-graph.js        — buildFlowGraph: AST → {nodes, edges}; resolveEdgeAction
     ├── flow/flow-layout.js       — layoutGraph: раскладка узлов графа (ряды × колонки)
     ├── drawflow/drawflow.js      — вендорная либа Drawflow (ES-модуль, MIT; стили css/vendor-drawflow.css)
+    ├── layout/anchor.js          — computeAnchorStyles: чистая математика якорей 0..1 (рантайм и превью)
     ├── templater/templater.js     — HTML-шаблонизатор
     ├── toml/toml.js               — вендорная либа (глобаль toml, классический скрипт)
     └── typer/typer.js             — печатающийся текст
@@ -176,6 +182,21 @@ const result = parser.evaluate(); // число, строка или boolean
 
 - **Палитра карточек** (`ACTION_SPECS`, 5 категорий): перетаскивание в группу (drop на панель = в конец, на карточку = перед ней) или клик; нативный HTML5 DnD без либ.
 - **Типизированные карточки**: поля рендерятся по спеке экшна (`editor-fields.js` конвертирует formValues ↔ args); селекты персонажей/фонов/статов/лейблов групп строятся из descriptor и текущего AST; у `showChoice*` — вариадик список вариантов; тумблер `⌗` переключает карточку в сырой режим.
+
+### Адаптеры визуального редактора (`js/adapters/` + `js/editor-adapters.js`)
+
+Для экшна можно объявить визуальный адаптер — модалку с live-превью вместо дефолтной формы. Контракт:
+- адаптер работает **только на уровне formValues** (ключи как в `spec.args`); запись в AST — только через карточный `collectAndApply()`;
+- ресурсы игры — только через `context` (`buildEditorContext`: persons/backgrounds/scenes/templates с URL);
+- регистрация: `registerAdapter(actionName, { title, mount(ctx) → { save(): patch|null } })` в `js/adapters/*.js`, файл подключается side-effect импортом в `editor.js`;
+- `ctx`: `{ container, values, context, makeStage(options) → createStagePreview, onChange(patch) }`;
+- превью: `createStagePreview` строит бокс 16:9 из настоящих шаблонов и стилей игры (css/game.css подключён в editor.html, per-game styles.css инжектится со скоупом под `.stage-preview`);
+- геометрия спрайтов: `computeAnchorStyles(x, y, viewport)` из `js/lib/layout/anchor.js` — одна математика для игры (`PersonController.updatePosition(viewport?)`) и превью;
+- кнопка «🎨» появляется в typed-карточке автоматически при наличии адаптера.
+
+### Тестовый прогон в разных разрешениях
+
+`viewport.html?game=game_1_demo&w=1280&h=720` — iframe ровно w×h c letterbox-масштабом: внутри честные `window.innerWidth`, media-queries и matchMedia. Пресеты в тулбаре. Автотесты геометрии — матрица разрешений в `js/lib/layout/anchor.test.js`.
 - Правка: CRUD и reorder групп/экшнов через чистые хелперы `lib/act/ast-editor.js`.
 - Валидация: имя экшна сверяется со списком `getKnownActionNames()` (экспорт `actions.js`); тест гарантирует равенство множеств `ACTION_SPECS` ↔ хендлеры; ключи групп проверяются на уникальность; ошибки аргументов показываются инлайн в карточке.
 - Сохранение: «Скачать .act» (Blob-download `<имя сцены>.ru.act`) или «Сохранить на сервер» (`POST /api/games/{id}/scenes/{file}`); перед обоими — контрольный round-trip `parse(serialize(ast))` должен дать идентичный AST.
@@ -194,6 +215,8 @@ node js/action-specs.test.js                # реестр экшнов + кон
 node js/lib/flow/flow-graph.test.js         # модель графа переходов
 node js/lib/flow/flow-layout.test.js        # раскладка графа
 node js/lib/expressions/expressions.test.js # Expressions
+node js/editor-adapters.test.js             # реестр адаптеров + контекст ресурсов
+node js/lib/layout/anchor.test.js           # математика якорей, матрица разрешений
 node js/tests/integration.test.js           # интеграционные
 node js/tests/runtime-errors.test.js        # изоляция упавших нод, guards
 ```
