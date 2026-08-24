@@ -1,3 +1,11 @@
+export class ActParseError extends Error {
+    constructor(message, lineNumber = null) {
+        super(lineNumber === null ? message : `${message} (line ${lineNumber})`);
+        this.name = 'ActParseError';
+        this.lineNumber = lineNumber;
+    }
+}
+
 export class ActParser {
     constructor({ content, generator } = {}) {
         this.content = content;
@@ -21,21 +29,29 @@ export class ActParser {
 
         let currentGroup = null;
         const lines = this.content.split('\n');
+        const seenKeys = new Set();
 
-        for (let rawLine of lines) {
-            const line = this._stripComment(rawLine).trim();
+        for (let i = 0; i < lines.length; i++) {
+            const lineNumber = i + 1;
+            const line = this._stripComment(lines[i]).trim();
             if (!line) continue;
 
             if (this._isLabel(line)) {
-                currentGroup = { key: this._parseLabel(line), actions: [] };
+                const key = this._parseLabel(line);
+                if (!key)
+                    throw new ActParseError('Empty group label', lineNumber);
+                if (seenKeys.has(key))
+                    throw new ActParseError(`Duplicate group label [${key}]`, lineNumber);
+                seenKeys.add(key);
+                currentGroup = { key, actions: [] };
                 this.groups.push(currentGroup);
                 continue;
             }
 
             if (currentGroup === null)
-                throw new Error('Actions found before any group label');
+                throw new ActParseError('Actions found before any group label', lineNumber);
 
-            const action = this._parseAction(line);
+            const action = this._parseAction(line, lineNumber);
             if (action)
                 currentGroup.actions.push(action);
         }
@@ -91,12 +107,14 @@ export class ActParser {
         return line.slice(1, -1).trim();
     }
 
-    _parseAction(line) {
+    _parseAction(line, lineNumber) {
         const parenOpen = line.indexOf('(');
-        if (parenOpen === -1) return null;
+        if (parenOpen === -1)
+            throw new ActParseError(`Invalid action syntax, missing "(": ${line}`, lineNumber);
 
         const name = line.substring(0, parenOpen).trim();
-        if (!name) return null;
+        if (!name)
+            throw new ActParseError(`Invalid action syntax, missing action name: ${line}`, lineNumber);
 
         let depth = 0;
         let parenClose = -1;
@@ -108,14 +126,18 @@ export class ActParser {
             }
         }
         if (parenClose === -1)
-            throw new Error(`Unmatched '(' in action: ${line}`);
+            throw new ActParseError(`Unmatched '(' in action: ${line}`, lineNumber);
 
         const argsStr = line.substring(parenOpen + 1, parenClose);
         const rest = line.substring(parenClose + 1).trim();
 
         let target = null;
-        if (rest.startsWith(':'))
-            target = rest.substring(1).trim();
+        if (rest) {
+            if (rest.startsWith(':'))
+                target = rest.substring(1).trim();
+            else
+                throw new ActParseError(`Unexpected content after action: ${line}`, lineNumber);
+        }
 
         const args = this._parseArgs(argsStr);
         if (target !== null)

@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import { ActParser } from '#/lib/act/act-parser.js';
+import { ActParser, ActParseError } from '#/lib/act/act-parser.js';
 import { ExpressionsParser } from '#/lib/expressions/expressions.js';
 
 const parse = content => (new ActParser({ content })).parse();
@@ -96,11 +96,72 @@ const evaluate = expr => new ExpressionsParser({
 }
 
 {
-    assert.throws(() => parse('showPhrase("no label")'), /Actions found before any group label/);
+    assert.throws(() => parse('showPhrase("no label")'), e => {
+        assert(e instanceof ActParseError);
+        assert.match(e.message, /Actions found before any group label/);
+        assert.equal(e.lineNumber, 1);
+        return true;
+    });
 }
 
 {
-    assert.throws(() => parse('[0]\nshowPhrase(unclosed('), /Unmatched/);
+    assert.throws(() => parse('[0]\nshowPhrase(unclosed('), e => {
+        assert(e instanceof ActParseError);
+        assert.match(e.message, /Unmatched '\('/);
+        assert.equal(e.lineNumber, 2);
+        return true;
+    });
+}
+
+{
+    // diagnostics: line numbers are 1-based and count blank/comment lines
+    const src = '[0]\n\n// comment\nsetBackground(1)\nbroken line without parens';
+    assert.throws(() => parse(src), e => {
+        assert(e instanceof ActParseError);
+        assert.match(e.message, /Invalid action syntax/);
+        assert.equal(e.lineNumber, 5);
+        return true;
+    });
+}
+
+{
+    assert.throws(() => parse('[0]\nsetBackground(1) oops'), e => {
+        assert(e instanceof ActParseError);
+        assert.match(e.message, /Unexpected content after action/);
+        assert.equal(e.lineNumber, 2);
+        return true;
+    });
+}
+
+{
+    assert.throws(() => parse('[]\nsetBackground(1)'), e => {
+        assert(e instanceof ActParseError);
+        assert.match(e.message, /Empty group label/);
+        assert.equal(e.lineNumber, 1);
+        return true;
+    });
+}
+
+{
+    assert.throws(() => parse('[0]\nshowTitle("a")\n[0]\nshowTitle("b")'), e => {
+        assert(e instanceof ActParseError);
+        assert.match(e.message, /Duplicate group label \[0\]/);
+        assert.equal(e.lineNumber, 3);
+        return true;
+    });
+}
+
+{
+    // duplicate detection is key-based, not positional
+    assert.throws(() => parse('[a]\nx()\n[b]\ny()\n[a]\nz()'), /Duplicate group label \[a\]/);
+}
+
+{
+    assert.throws(() => parse('[0]\n(42)'), e => {
+        assert.match(e.message, /missing action name/);
+        assert.equal(e.lineNumber, 2);
+        return true;
+    });
 }
 
 {
