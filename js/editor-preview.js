@@ -49,7 +49,10 @@ export async function createStagePreview(context, { width = 560 } = {}) {
     const choicesBox = document.createElement('div');
     choicesBox.className = 'choices-container';
 
-    root.append(background, characters, dialogue, choicesBox);
+    const sceneTitle = document.createElement('div');
+    sceneTitle.className = 'scene-title inactive';
+
+    root.append(background, characters, dialogue, choicesBox, sceneTitle);
 
     // Per-game stylesheet (descriptor.templates.styles), scoped to this preview
     const stylesURL = context?.templates?.styles;
@@ -61,6 +64,7 @@ export async function createStagePreview(context, { width = 560 } = {}) {
 
     const dialogTemplateURL = context?.templates?.dialog ?? null;
     const choicesTemplateURL = context?.templates?.choices ?? null;
+    const titleTemplateURL = context?.templates?.sceneTitle ?? null;
 
     const activateDialog = isActive => {
         dialogue.classList.toggle('active', isActive);
@@ -161,6 +165,26 @@ export async function createStagePreview(context, { width = 560 } = {}) {
 
         hideDialog() {
             dialogue.innerHTML = '';
+        },
+
+        async showTitle(title) {
+            if (!titleTemplateURL)
+                return;
+            const template = await fetchTemplateBody(titleTemplateURL);
+            if (!template)
+                return;
+
+            sceneTitle.innerHTML = '';
+            sceneTitle.appendChild(template.cloneNode(true));
+            sceneTitle.classList.remove('inactive');
+
+            for (const el of sceneTitle.querySelectorAll('[data-bs-injection-key]'))
+                if (el.getAttribute('data-bs-injection-key') === 'title')
+                    el.textContent = title ?? '';
+        },
+
+        hideTitle() {
+            sceneTitle.classList.add('inactive');
         },
 
         hideChoices() {

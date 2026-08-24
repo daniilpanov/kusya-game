@@ -23,9 +23,11 @@ js/
 ├── editor-preview.js — createStagePreview: live-превью сцены 16:9 из настоящих шаблонов игры
 ├── adapters/ — визуальные адаптеры (self-register через side-effect импорт)
 │   ├── ui.js — общие хелперы адаптеров: пикеры персонажа и фона превью
-│   ├── person-position.js — адаптер showPersonSprite (пресеты, драг, превью)
+│   ├── person-position.js — showPersonSprite + movePersonSprite (пресеты, драг, превью)
 │   ├── phrase.js — адаптер showPhrasePerson (автор, текст, live-диалог)
-│   └── choice.js — адаптеры showChoice / showChoicePerson (варианты строками, экран выбора)
+│   ├── choice.js — адаптеры showChoice / showChoicePerson (варианты строками, экран выбора)
+│   ├── bg.js — адаптер setBackground (галерея миниатюр, live-превью)
+│   └── title.js — адаптер showTitle (текст заголовка, превью тайтла)
 ├── person.js       — PersonController: спрайты персонажей
 ├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/

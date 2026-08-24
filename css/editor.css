@@ -556,3 +556,41 @@ dialog.editor-modal::backdrop {
     gap: 10px;
     align-items: center;
 }
+
+/* Per-game sheets may use viewport units (e.g. .ng--title); keep them inside the box */
+.stage-preview .scene-title > * {
+    max-width: 100% !important;
+    max-height: 100% !important;
+}
+
+/* Background gallery (setBackground adapter) */
+.bg-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bg-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border: 2px solid #c3c9d2;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.bg-card img {
+    width: 96px;
+    height: 54px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.bg-card.active {
+    border-color: #4a7bd0;
+    box-shadow: 0 0 0 2px rgba(74, 123, 208, 0.35);
+}

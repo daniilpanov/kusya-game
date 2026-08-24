@@ -23,6 +23,8 @@ import { openModal } from '#/editor-modal.js';
 import '#/adapters/person-position.js';
 import '#/adapters/phrase.js';
 import '#/adapters/choice.js';
+import '#/adapters/bg.js';
+import '#/adapters/title.js';
 
 export class ScenesEditor {
     constructor() {

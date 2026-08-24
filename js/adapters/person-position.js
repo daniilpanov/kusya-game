@@ -1,25 +1,23 @@
-// Pilot visual editor adapter: positioning a person sprite on stage.
-// Proves the adapter contract from js/editor-adapters.js; registered via
-// side-effect import (same pattern as templater_typer_extension.js).
+// Visual editor adapters for the two person-position actions:
+// showPersonSprite (with hideAll + dialog demo) and movePersonSprite
+// (pure positioning, coordinates required). Registered via side-effect import.
 
 import { registerAdapter, POSITION_PRESETS, clamp01, formatAnchor } from '#/editor-adapters.js';
 import { createPersonSpritePicker, createBackgroundPicker } from '#/adapters/ui.js';
 
-registerAdapter('showPersonSprite', {
-    title: 'Позиция персонажа',
-
-    mount({ container, values, context, makeStage, onChange }) {
+const makeMount = ({ withHideAll, requireXY }) =>
+    ({ container, values, context, makeStage, onChange }) => {
         const state = { ...values };
 
         const controls = document.createElement('div');
         controls.className = 'adapter-controls';
 
-        const picker = createPersonSpritePicker(context, state.person ?? '', commit);
         const pickerRow = document.createElement('div');
         pickerRow.className = 'field-row';
         const pickerLabel = document.createElement('span');
         pickerLabel.className = 'field-label';
         pickerLabel.textContent = 'Персонаж:';
+        const picker = createPersonSpritePicker(context, state.person ?? '', commit);
         pickerRow.append(pickerLabel, picker.el);
 
         const presetRow = document.createElement('div');
@@ -38,20 +36,23 @@ registerAdapter('showPersonSprite', {
             presetRow.appendChild(btn);
         }
 
-        const hideAllRow = document.createElement('label');
-        hideAllRow.className = 'field-row adapter-inline';
-        const hideAllCheck = document.createElement('input');
-        hideAllCheck.type = 'checkbox';
-        hideAllCheck.checked = state.hideAll === 'true';
-        const hideAllText = document.createElement('span');
-        hideAllText.textContent = 'Скрыть остальных персонажей';
-        hideAllCheck.addEventListener('change', () => {
-            state.hideAll = hideAllCheck.checked ? 'true' : '';
-            onChange({ hideAll: state.hideAll });
-        });
+        controls.append(pickerRow, presetRow);
 
-        hideAllRow.append(hideAllCheck, hideAllText);
-        controls.append(pickerRow, presetRow, hideAllRow);
+        if (withHideAll) {
+            const hideAllRow = document.createElement('label');
+            hideAllRow.className = 'field-row adapter-inline';
+            const hideAllCheck = document.createElement('input');
+            hideAllCheck.type = 'checkbox';
+            hideAllCheck.checked = state.hideAll === 'true';
+            const hideAllText = document.createElement('span');
+            hideAllText.textContent = 'Скрыть остальных персонажей';
+            hideAllCheck.addEventListener('change', () => {
+                state.hideAll = hideAllCheck.checked ? 'true' : '';
+                onChange({ hideAll: state.hideAll });
+            });
+            hideAllRow.append(hideAllCheck, hideAllText);
+            controls.appendChild(hideAllRow);
+        }
 
         const bgPicker = createBackgroundPicker(context, index => {
             previewBackground = context.backgrounds[index]?.url ?? null;
@@ -106,15 +107,15 @@ registerAdapter('showPersonSprite', {
 
         function redraw() {
             if (!stage) return;
-            const sprite = picker.findSprite();
 
             stage.setBackground(previewBackground);
             stage.showSprite({
-                url: sprite?.url ?? null,
-                x: state.x !== '' && state.x != null ? Number(state.x) : 0.5,
-                y: state.y !== '' && state.y != null ? Number(state.y) : 0.5,
+                url: picker.findSprite()?.url ?? null,
+                x: anchorOf(state.x),
+                y: anchorOf(state.y),
             });
-            if (state.person && !state.hideAll)
+
+            if (withHideAll && state.person && !state.hideAll)
                 stage.showDialog({ author: '', text: 'Так выглядит диалог этого персонажа' });
             else
                 stage.hideDialog();
@@ -125,17 +126,31 @@ registerAdapter('showPersonSprite', {
                     && Math.abs(0.5 - Number(state.y)) < 0.001));
         }
 
+        const anchorOf = value =>
+            value === undefined || value === '' ? 0.5 : Number(value);
+
         container.append(controls, stageBox);
 
         return {
             save() {
                 return {
                     person: state.person ?? '',
-                    hideAll: state.hideAll ?? '',
-                    x: state.x === undefined || state.x === '' ? '' : formatAnchor(state.x),
-                    y: state.y === undefined || state.y === '' ? '' : formatAnchor(state.y),
+                    ...(withHideAll ? { hideAll: state.hideAll ?? '' } : {}),
+                    x: state.x === undefined || state.x === ''
+                        ? (requireXY ? '0.5' : '') : formatAnchor(state.x),
+                    y: state.y === undefined || state.y === ''
+                        ? (requireXY ? '0.5' : '') : formatAnchor(state.y),
                 };
             },
         };
-    },
+    };
+
+registerAdapter('showPersonSprite', {
+    title: 'Позиция персонажа',
+    mount: makeMount({ withHideAll: true, requireXY: false }),
+});
+
+registerAdapter('movePersonSprite', {
+    title: 'Позиция персонажа (перемещение)',
+    mount: makeMount({ withHideAll: false, requireXY: true }),
 });
