@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel Platform - Тест разрешений</title>
+    <style>
+        body {
+            margin: 0;
+            background: #14171c;
+            color: #dfe3e9;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .vp-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #20242b;
+            border-bottom: 1px solid #2e3440;
+            flex-wrap: wrap;
+        }
+
+        .vp-toolbar button, .vp-toolbar input {
+            font: inherit;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #3a4150;
+            background: #2a303a;
+            color: inherit;
+        }
+
+        .vp-toolbar button.active {
+            background: #4a7bd0;
+            border-color: #4a7bd0;
+        }
+
+        .vp-frame-box {
+            flex: 1;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .vp-label {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 2;
+        }
+
+        iframe.vp-frame {
+            border: 1px solid #3a4150;
+            background: black;
+        }
+    </style>
+</head>
+<body>
+<div class="vp-toolbar">
+    <span>Разрешение:</span>
+    <!-- Presets are rendered by the script -->
+    <input id="w" type="number" min="240" max="3840" style="width:80px" value="1280"> ×
+    <input id="h" type="number" min="240" max="2160" style="width:80px" value="720">
+    <button id="applyBtn">Применить</button>
+    <span id="gameHint" style="opacity:.7"></span>
+</div>
+<div class="vp-frame-box">
+    <span class="vp-label" id="sizeLabel"></span>
+    <iframe class="vp-frame" id="frame" title="Игра в тестовом разрешении"></iframe>
+</div>
+
+<script type="module">
+    const PRESETS = [
+        [1920, 1080], [1366, 768], [1024, 768],
+        [844, 390], [390, 844], // landscape / portrait phones
+    ];
+
+    const $w = document.getElementById('w');
+    const $h = document.getElementById('h');
+    const frame = document.getElementById('frame');
+    const label = document.getElementById('sizeLabel');
+    const hint = document.getElementById('gameHint');
+
+    const params = new URLSearchParams(location.search);
+    const game = params.get('game') ?? 'game_1_demo';
+    hint.textContent = `игра: ${game} (меняется параметром ?game=)`;
+
+    let scale = 1;
+
+    function apply(width, height) {
+        width = Math.max(240, Math.min(3840, width | 0));
+        height = Math.max(240, Math.min(2160, height | 0));
+        $w.value = width;
+        $h.value = height;
+
+        frame.src = `game.html?game_resource=resources/games/${game}`
+            + `&game_descriptor_uri=resources/games/${game}/config/descriptor.toml`;
+
+        label.textContent = `${width} × ${height}`;
+        fit();
+    }
+
+    // letterbox the fixed-size frame into the available box
+    function fit() {
+        const box = frame.parentElement.getBoundingClientRect();
+        const width = Number($w.value);
+        const height = Number($h.value);
+        scale = Math.min(1, (box.width - 24) / width, (box.height - 24) / height);
+        frame.style.width = `${width}px`;
+        frame.style.height = `${height}px`;
+        frame.style.transform = `scale(${scale})`;
+        frame.style.transformOrigin = 'center';
+        label.textContent = `${width} × ${height}${scale < 1 ? ` (${Math.round(scale * 100)}%)` : ''}`;
+    }
+
+    for (const [presetW, presetH] of PRESETS) {
+        const btn = document.createElement('button');
+        btn.textContent = `${presetW}×${presetH}`;
+        btn.addEventListener('click', () => {
+            apply(presetW, presetH);
+            [...btn.parentElement.querySelectorAll('button')]
+                .forEach(b => b.classList.toggle('active', b === btn));
+        });
+        document.querySelector('.vp-toolbar').insertBefore(btn, $w);
+    }
+
+    document.getElementById('applyBtn').addEventListener('click', () =>
+        apply(Number($w.value), Number($h.value)));
+
+    window.addEventListener('resize', fit);
+
+    apply(Number(params.get('w')) || 1280, Number(params.get('h')) || 720);
+</script>
+</body>
+</html>
