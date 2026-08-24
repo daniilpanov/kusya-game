@@ -1,6 +1,6 @@
 import { Utils } from '#/utils.js';
 import { ActParser } from '#/lib/act/act-parser.js';
-import { ActSerializer, ActSerializeError } from '#/lib/act/act-serializer.js';
+import { ActSerializer } from '#/lib/act/act-serializer.js';
 import { getKnownActionNames } from '#/actions.js';
 import {
     createGroup,
@@ -31,6 +31,7 @@ export class ScenesEditor {
         this.$gameSelect = document.getElementById('gameSelect');
         this.$sceneSelect = document.getElementById('sceneSelect');
         this.$exportBtn = document.getElementById('exportBtn');
+        this.$saveBtn = document.getElementById('saveBtn');
         this.$addGroupBtn = document.getElementById('addGroupBtn');
         this.$addActionBtn = document.getElementById('addActionBtn');
         this.$statusBar = document.getElementById('statusBar');
@@ -43,6 +44,7 @@ export class ScenesEditor {
         this.$gameSelect.addEventListener('change', () => this.loadGame(this.$gameSelect.value).catch(e => this.setStatus(e.message, 'error')));
         this.$sceneSelect.addEventListener('change', () => this.loadScene(this.$sceneSelect.value).catch(e => this.setStatus(e.message, 'error')));
         this.$exportBtn.addEventListener('click', () => this.exportScene());
+        this.$saveBtn.addEventListener('click', () => this.saveScene().catch(e => this.setStatus(e.message, 'error')));
         this.$addGroupBtn.addEventListener('click', () => this.addGroup());
         this.$addActionBtn.addEventListener('click', () => this.addAction());
 
@@ -93,6 +95,7 @@ export class ScenesEditor {
         this.$sceneSelect.innerHTML = '<option value="">Сначала выберите игру</option>';
         this.$sceneSelect.disabled = true;
         this.$exportBtn.disabled = true;
+        this.$saveBtn.disabled = true;
         this.$addGroupBtn.disabled = true;
         this.$addActionBtn.disabled = true;
         this.renderGroups();
@@ -116,6 +119,7 @@ export class ScenesEditor {
         this.selectedGroupIdx = this.ast.groups.length ? 0 : -1;
         this.$sceneSelect.value = sceneKey;
         this.$exportBtn.disabled = false;
+        this.$saveBtn.disabled = false;
         this.$addGroupBtn.disabled = false;
         this.setStatus(`Сцена "${sceneKey}" загружена`, 'success');
         this.renderGroups();
@@ -217,22 +221,25 @@ export class ScenesEditor {
         }
     }
 
-    exportScene() {
+    buildSceneText() {
         const ast = this.requireAst();
-        let text;
-        try {
-            text = new ActSerializer().serialize(ast);
-        } catch (error) {
-            const message = error instanceof ActSerializeError && error.context
-                ? `${error.message} ${JSON.stringify(error.context)}`
-                : error.message;
-            return this.setStatus(`Экспорт невозможен: ${message}`, 'error');
-        }
+        const text = new ActSerializer().serialize(ast);
 
         // Safety net: serialized text must reparse into the same AST
         const reparsed = new ActParser({ content: text }).parse().groups;
         if (JSON.stringify(reparsed) !== JSON.stringify(ast.groups))
-            return this.setStatus('Экспорт отменён: round-trip проверка не совпала', 'error');
+            throw new Error('round-trip проверка не совпала');
+
+        return text;
+    }
+
+    exportScene() {
+        let text;
+        try {
+            text = this.buildSceneText();
+        } catch (error) {
+            return this.setStatus(`Экспорт невозможен: ${error.message}`, 'error');
+        }
 
         const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         const link = document.createElement('a');
@@ -241,6 +248,28 @@ export class ScenesEditor {
         link.click();
         URL.revokeObjectURL(link.href);
         this.setStatus(`Файл ${link.download} сохранён`, 'success');
+    }
+
+    async saveScene() {
+        let text;
+        try {
+            text = this.buildSceneText();
+        } catch (error) {
+            return this.setStatus(`Сохранение невозможно: ${error.message}`, 'error');
+        }
+
+        this.$saveBtn.disabled = true;
+        try {
+            await Utils.fetchJSON(`/api/games/${this.game.resource.split('/').pop()}/scenes/${encodeURIComponent(this.sceneFileName)}`, {
+                method: 'POST',
+                body: { content: text },
+            });
+            this.setStatus(`Сцена "${this.sceneKey}" сохранена на сервер`, 'success');
+        } catch (error) {
+            this.setStatus(`Не удалось сохранить: ${error.message}`, 'error');
+        } finally {
+            this.$saveBtn.disabled = false;
+        }
     }
 
     renderGroups() {
