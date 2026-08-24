@@ -7,18 +7,20 @@
 ## Архитектура (Frontend)
 
 ```
-index.html / game.html — главная страница / страница игры
-css/  — style.css (общие), app.css (главная), game.css (игровой экран)
+index.html / game.html / editor.html — главная / игра / редактор сцен
+css/  — style.css (общие), app.css (главная), game.css (игровой экран), editor.css (редактор)
 js/
 ├── app.js          — NovelPlatformApp: список игр (GET /api/games)
 ├── game.js         — Game: ядро, загрузка descriptor.toml, управление сценами
 ├── scene.js        — SceneController: загрузка action-групп из .act
-├── actions.js      — createHandlersMap(): все обработчики экшнов
+├── actions.js      — createHandlersMap(): все обработчики экшнов + getKnownActionNames()
+├── editor.js       — ScenesEditor: UI редактора (игра → сцена → группы/экшны)
 ├── person.js       — PersonController: спрайты персонажей
 ├── templater_typer_extension.js — регистрирует typer-инъекцию в Templater (side-effect при импорте)
 └── lib/
-    ├── act/act-parser.js          — ActParser: парсер .act-файлов → AST { groups }
+    ├── act/act-parser.js          — ActParser: парсер .act-файлов → AST { groups }; статический ActParser.parseArgs()
     ├── act/act-serializer.js      — ActSerializer: AST → текст .act (round-trip к парсеру)
+    ├── act/ast-editor.js          — чистые CRUD-хелперы над AST групп/экшнов
     ├── expressions/expressions.js — ExpressionsParser: парсер и вычисление выражений
     ├── templater/templater.js     — HTML-шаблонизатор
     ├── toml/toml.js               — вендорная либа (глобаль toml, классический скрипт)
@@ -162,12 +164,24 @@ const result = parser.evaluate(); // число, строка или boolean
 
 ---
 
+## Редактор сцен (`editor.html` + `js/editor.js`)
+
+`ScenesEditor` — клиентский nocode-редактор .act-файлов. Флоу: выбор игры (`GET /api/games`) → `descriptor.toml` → сцена (ключи из `[scenes]`, файл по полю `RU`) → парсинг через `ActParser`.
+
+- Правка: карточки экшнов (имя + сырая строка аргументов, токенизация через статический `ActParser.parseArgs`), CRUD и reorder групп/экшнов через чистые хелперы `lib/act/ast-editor.js`.
+- Валидация: имя экшна сверяется со списком `getKnownActionNames()` (экспорт `actions.js`); ключи групп проверяются на уникальность; ошибки аргументов показываются инлайн в карточке.
+- Сохранение v1 — скачивание файла: сериализация → контрольный round-trip `parse(serialize(ast))` должен дать идентичный AST → Blob-download `<имя сцены>.ru.act`. Запись на сервер пока отсутствует.
+- Комментарии при экспорте теряются (см. «Диагностика парсера») — сохранение нормализует файл.
+
+---
+
 ## Тесты
 
 ```bash
 ./run-tests.sh                              # все тесты сразу
 node js/lib/act/act-parser.test.js          # ActParser
 node js/lib/act/act-serializer.test.js      # ActSerializer + round-trip
+node js/lib/act/ast-editor.test.js          # AST-хелперы редактора
 node js/lib/expressions/expressions.test.js # Expressions
 node js/tests/integration.test.js           # интеграционные
 node js/tests/runtime-errors.test.js        # изоляция упавших нод, guards
